@@ -19,6 +19,8 @@ func setupServiceTestDB(t *testing.T) *gorm.DB {
 	err = db.AutoMigrate(
 		&models.User{}, &models.Instance{}, &models.InstanceMembership{},
 		&models.MediaItem{}, &models.Wine{}, &models.Recipe{},
+		&models.Ingredient{}, &models.RecipeStep{}, &models.RecipeTag{},
+		&models.ChatSession{}, &models.ChatMessage{},
 	)
 	require.NoError(t, err)
 

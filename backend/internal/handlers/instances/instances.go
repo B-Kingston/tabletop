@@ -25,7 +25,6 @@ func NewHandler(service *services.InstanceService, db *gorm.DB) *Handler {
 func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 	// Routes that require auth but not instance membership
 	instances := r.Group("/instances")
-	instances.Use(middleware.RequireAuth(&middleware.AuthConfig{}))
 	{
 		instances.POST("", h.Create)
 		instances.GET("", h.List)
@@ -59,7 +58,7 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	userID, ok := middleware.GetInternalUserID(c)
+	userID, ok := middleware.ResolveUserID(c, h.db)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not identified"})
 		return
@@ -76,7 +75,7 @@ func (h *Handler) Create(c *gin.Context) {
 
 // List returns all instances the current user belongs to
 func (h *Handler) List(c *gin.Context) {
-	userID, ok := middleware.GetInternalUserID(c)
+	userID, ok := middleware.ResolveUserID(c, h.db)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not identified"})
 		return
@@ -134,7 +133,7 @@ func (h *Handler) Join(c *gin.Context) {
 		return
 	}
 
-	userID, ok := middleware.GetInternalUserID(c)
+	userID, ok := middleware.ResolveUserID(c, h.db)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not identified"})
 		return

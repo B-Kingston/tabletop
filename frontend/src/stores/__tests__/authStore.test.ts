@@ -2,19 +2,13 @@ import { describe, it, expect } from 'vitest'
 import { useAuthStore } from '../authStore'
 
 describe('authStore', () => {
-  it('should initialize with null token', () => {
+  it('should initialize with hasSynced false', () => {
     const state = useAuthStore.getState()
-    expect(state.token).toBeNull()
+    expect(state.hasSynced).toBe(false)
   })
 
-  it('should set token', () => {
-    useAuthStore.getState().setToken('test-token-123')
-    expect(useAuthStore.getState().token).toBe('test-token-123')
-  })
-
-  it('should clear token', () => {
-    useAuthStore.getState().setToken('test-token-123')
-    useAuthStore.getState().setToken(null)
-    expect(useAuthStore.getState().token).toBeNull()
+  it('should set hasSynced', () => {
+    useAuthStore.getState().setHasSynced(true)
+    expect(useAuthStore.getState().hasSynced).toBe(true)
   })
 })

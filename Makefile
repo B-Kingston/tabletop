@@ -1,59 +1,49 @@
-.PHONY: dev dev-backend dev-frontend test test-backend test-frontend build docker-up docker-down lint
+.PHONY: dev prod test test-backend test-frontend build lint migrate install
 
-# Development
- dev:
-	@echo "Starting all services..."
-	@docker-compose up -d db redis
-	@make dev-backend & make dev-frontend
-	@wait
+# Development — delegates to scripts for single source of truth
+dev:
+	@./dev.sh
 
- dev-backend:
-	@echo "Starting backend..."
-	@cd backend && go run ./cmd/api
-
- dev-frontend:
-	@echo "Starting frontend..."
-	@cd frontend && npm run dev
+prod:
+	@./run.sh
 
 # Testing
- test:
+test:
 	@make test-backend
 	@make test-frontend
 
- test-backend:
+test-backend:
 	@echo "Running backend tests..."
 	@cd backend && go test ./... -v
 
- test-frontend:
+test-backend-coverage:
+	@echo "Running backend tests with coverage..."
+	@cd backend && go test ./... -coverprofile=coverage.out && go tool cover -func=coverage.out
+
+test-frontend:
 	@echo "Running frontend tests..."
 	@cd frontend && npx vitest run
 
+test-frontend-coverage:
+	@echo "Running frontend tests with coverage..."
+	@cd frontend && npx vitest run --coverage
+
 # Build
- build:
+build:
 	@cd backend && go build -o bin/api ./cmd/api
 	@cd frontend && npm run build
 
-# Docker
- docker-up:
-	@docker-compose up -d
-
- docker-down:
-	@docker-compose down
-
- docker-build:
-	@docker-compose build
-
 # Lint
- lint-backend:
+lint-backend:
 	@cd backend && go vet ./...
 
- lint-frontend:
+lint-frontend:
 	@cd frontend && npm run lint
 
 # Database
- migrate:
+migrate:
 	@cd backend && go run ./cmd/api migrate
 
 # Install
- install:
+install:
 	@cd frontend && npm install

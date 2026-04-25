@@ -2,6 +2,46 @@
 
 Track media, wines, and recipes with the people you share them with.
 
+## Two Ways to Run Locally
+
+| Mode | Command | What's running | Use for |
+|------|---------|--------------|---------|
+| **Dev** (fast iteration) | `./dev.sh` | Docker infra (Postgres + Redis) + native Go backend + native Vite frontend | Daily development, hot-reload |
+| **Prod-like** (containerized) | `./run.sh` | Full Docker Compose stack (db, redis, api, web) | Testing the production build, CI verification |
+
+### Dev mode (`./dev.sh`)
+
+Requires **Go 1.22+**, **Node 20+**, and **Docker**.
+
+```bash
+# One-time setup
+cp .env.dev.example .env.dev
+# Optional: install Go hot-reloader
+# go install github.com/air-verse/air@latest
+
+./dev.sh
+```
+
+- Postgres + Redis start in Docker
+- Backend runs natively at `http://localhost:8080` (auto-reloads with `air` if installed)
+- Frontend runs natively at `http://localhost:3000` (Vite HMR)
+- Press `Ctrl+C` to stop the native processes; Docker infra stays up (stop it with `docker compose down`)
+
+### Prod-like mode (`./run.sh`)
+
+Requires **Docker** only.
+
+```bash
+cp .env.example .env
+# Fill in real Clerk, TMDB, and OpenAI keys
+
+./run.sh
+```
+
+- All four services run in containers
+- API available at `http://localhost:8080`
+- Built SPA served by nginx at `http://localhost:3000`
+
 ## Stack
 
 - **Frontend:** React 18 + TypeScript + Vite + Tailwind CSS + shadcn/ui + TanStack Query + Zustand + Framer Motion
@@ -42,46 +82,6 @@ tabletop/
 ├── SETUP.md          # External service setup guide
 └── .env.example
 ```
-
-## Quick Start
-
-### Prerequisites
-
-- Go 1.22+
-- Node.js 20+
-- Docker & Docker Compose
-- Accounts: Clerk, TMDB, OpenAI, NeonDB (see [SETUP.md](./SETUP.md))
-
-### 1. Configure Environment
-
-```bash
-cp .env.example .env
-# Edit .env with your real API keys
-```
-
-### 2. Start Infrastructure
-
-```bash
-docker-compose up -d db redis
-```
-
-### 3. Run Backend
-
-```bash
-cd backend
-go run ./cmd/api
-```
-
-### 4. Run Frontend
-
-```bash
-cd frontend
-cp .env.example .env.local
-npm install
-npm run dev
-```
-
-Visit http://localhost:3000
 
 ## Testing
 

@@ -30,3 +30,9 @@ vendor/
 
 # Docker
 *.log
+
+# Claude
+.claude/
+
+# Node
+node_modules/

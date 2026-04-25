@@ -66,6 +66,7 @@ func TestValidate_MissingTMDBAPIKey(t *testing.T) {
 	cfg := &Config{
 		DatabaseURL:    "postgres://test",
 		ClerkSecretKey: "sk_test",
+		ClerkJWKSURL:  "https://test.clerk.accounts.dev/.well-known/jwks.json",
 	}
 
 	err := cfg.Validate()
@@ -77,6 +78,7 @@ func TestValidate_Success(t *testing.T) {
 	cfg := &Config{
 		DatabaseURL:    "postgres://test",
 		ClerkSecretKey: "sk_test",
+		ClerkJWKSURL:  "https://test.clerk.accounts.dev/.well-known/jwks.json",
 		TMDBAPIKey:     "tmdb_test",
 	}
 

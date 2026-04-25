@@ -10,17 +10,15 @@ import (
 )
 
 // InstanceRepository handles instance data access
-type InstanceRepository struct {
+type GormInstanceRepository struct {
 	db *gorm.DB
 }
 
-// NewInstanceRepository creates a new instance repository
-func NewInstanceRepository(db *gorm.DB) *InstanceRepository {
-	return &InstanceRepository{db: db}
+func NewInstanceRepository(db *gorm.DB) *GormInstanceRepository {
+	return &GormInstanceRepository{db: db}
 }
 
-// Create inserts a new instance
-func (r *InstanceRepository) Create(ctx context.Context, instance *models.Instance) error {
+func (r *GormInstanceRepository) Create(ctx context.Context, instance *models.Instance) error {
 	if err := r.db.WithContext(ctx).Create(instance).Error; err != nil {
 		return fmt.Errorf("failed to create instance: %w", err)
 	}
@@ -28,7 +26,7 @@ func (r *InstanceRepository) Create(ctx context.Context, instance *models.Instan
 }
 
 // GetByID finds an instance by ID with associations
-func (r *InstanceRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Instance, error) {
+func (r *GormInstanceRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Instance, error) {
 	var instance models.Instance
 	if err := r.db.WithContext(ctx).
 		Preload("Owner").
@@ -43,7 +41,7 @@ func (r *InstanceRepository) GetByID(ctx context.Context, id uuid.UUID) (*models
 }
 
 // ListByUserID returns all instances a user belongs to
-func (r *InstanceRepository) ListByUserID(ctx context.Context, userID uuid.UUID) ([]models.Instance, error) {
+func (r *GormInstanceRepository) ListByUserID(ctx context.Context, userID uuid.UUID) ([]models.Instance, error) {
 	var instances []models.Instance
 	if err := r.db.WithContext(ctx).
 		Joins("JOIN instance_memberships ON instance_memberships.instance_id = instances.id").
@@ -56,7 +54,7 @@ func (r *InstanceRepository) ListByUserID(ctx context.Context, userID uuid.UUID)
 }
 
 // Update modifies an instance
-func (r *InstanceRepository) Update(ctx context.Context, instance *models.Instance) error {
+func (r *GormInstanceRepository) Update(ctx context.Context, instance *models.Instance) error {
 	if err := r.db.WithContext(ctx).Save(instance).Error; err != nil {
 		return fmt.Errorf("failed to update instance: %w", err)
 	}
@@ -64,7 +62,7 @@ func (r *InstanceRepository) Update(ctx context.Context, instance *models.Instan
 }
 
 // Delete removes an instance and all related data
-func (r *InstanceRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *GormInstanceRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	if err := r.db.WithContext(ctx).Delete(&models.Instance{}, "id = ?", id).Error; err != nil {
 		return fmt.Errorf("failed to delete instance: %w", err)
 	}
@@ -72,7 +70,7 @@ func (r *InstanceRepository) Delete(ctx context.Context, id uuid.UUID) error {
 }
 
 // AddMember adds a user to an instance
-func (r *InstanceRepository) AddMember(ctx context.Context, membership *models.InstanceMembership) error {
+func (r *GormInstanceRepository) AddMember(ctx context.Context, membership *models.InstanceMembership) error {
 	if err := r.db.WithContext(ctx).Create(membership).Error; err != nil {
 		return fmt.Errorf("failed to add member: %w", err)
 	}
@@ -80,7 +78,7 @@ func (r *InstanceRepository) AddMember(ctx context.Context, membership *models.I
 }
 
 // RemoveMember removes a user from an instance
-func (r *InstanceRepository) RemoveMember(ctx context.Context, instanceID, userID uuid.UUID) error {
+func (r *GormInstanceRepository) RemoveMember(ctx context.Context, instanceID, userID uuid.UUID) error {
 	if err := r.db.WithContext(ctx).
 		Delete(&models.InstanceMembership{}, "instance_id = ? AND user_id = ?", instanceID, userID).Error; err != nil {
 		return fmt.Errorf("failed to remove member: %w", err)
@@ -89,7 +87,7 @@ func (r *InstanceRepository) RemoveMember(ctx context.Context, instanceID, userI
 }
 
 // IsMember checks if a user is a member of an instance
-func (r *InstanceRepository) IsMember(ctx context.Context, instanceID, userID uuid.UUID) (bool, error) {
+func (r *GormInstanceRepository) IsMember(ctx context.Context, instanceID, userID uuid.UUID) (bool, error) {
 	var count int64
 	if err := r.db.WithContext(ctx).
 		Model(&models.InstanceMembership{}).
@@ -101,7 +99,7 @@ func (r *InstanceRepository) IsMember(ctx context.Context, instanceID, userID uu
 }
 
 // GetMemberRole returns the role of a user in an instance
-func (r *InstanceRepository) GetMemberRole(ctx context.Context, instanceID, userID uuid.UUID) (string, error) {
+func (r *GormInstanceRepository) GetMemberRole(ctx context.Context, instanceID, userID uuid.UUID) (string, error) {
 	var membership models.InstanceMembership
 	if err := r.db.WithContext(ctx).
 		Where("instance_id = ? AND user_id = ?", instanceID, userID).

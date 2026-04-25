@@ -11,11 +11,10 @@ import (
 
 // Handler handles authentication-related HTTP requests
 type Handler struct {
-	userRepo *repositories.UserRepository
+	userRepo repositories.UserRepository
 }
 
-// NewHandler creates a new auth handler
-func NewHandler(userRepo *repositories.UserRepository) *Handler {
+func NewHandler(userRepo repositories.UserRepository) *Handler {
 	return &Handler{userRepo: userRepo}
 }
 

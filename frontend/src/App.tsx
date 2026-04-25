@@ -1,23 +1,6 @@
-import { useAuth } from '@clerk/clerk-react'
-import { AppShell } from './components/layout/AppShell'
-import { AuthGate } from './components/layout/AuthGate'
+import { RouterProvider } from '@tanstack/react-router'
+import { router } from './router'
 
-function App() {
-  const { isLoaded } = useAuth()
-
-  if (!isLoaded) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-900" />
-      </div>
-    )
-  }
-
-  return (
-    <AppShell>
-      <AuthGate />
-    </AppShell>
-  )
+export default function App() {
+  return <RouterProvider router={router} />
 }
-
-export default App

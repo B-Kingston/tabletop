@@ -64,6 +64,14 @@ func NewTMDBService(apiKey string) *TMDBService {
 	}
 }
 
+func (s *TMDBService) SetBaseURL(url string) {
+	s.baseURL = url
+}
+
+func (s *TMDBService) SetHTTPClient(client *http.Client) {
+	s.httpClient = client
+}
+
 // SearchMulti searches for movies and TV shows
 func (s *TMDBService) SearchMulti(ctx context.Context, query string, page int) (*TMDBSearchResponse, error) {
 	params := url.Values{
@@ -123,6 +131,49 @@ func (s *TMDBService) GetMovieDetails(ctx context.Context, tmdbID int) (*TMDBMov
 	}
 
 	var details TMDBMovieDetails
+	if err := json.NewDecoder(resp.Body).Decode(&details); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &details, nil
+}
+
+type TMDBTVDetails struct {
+	ID               int     `json:"id"`
+	Name             string  `json:"name"`
+	Overview         string  `json:"overview"`
+	PosterPath       string  `json:"poster_path"`
+	FirstAirDate     string  `json:"first_air_date"`
+	NumberOfEpisodes int     `json:"number_of_episodes"`
+	NumberOfSeasons  int     `json:"number_of_seasons"`
+	VoteAverage      float64 `json:"vote_average"`
+	Genres           []struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	} `json:"genres"`
+}
+
+func (s *TMDBService) GetTVDetails(ctx context.Context, tmdbID int) (*TMDBTVDetails, error) {
+	params := url.Values{"api_key": {s.apiKey}}
+	endpoint := fmt.Sprintf("%s/tv/%d?%s", s.baseURL, tmdbID, params.Encode())
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch tv show: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("TMDB returned %d: %s", resp.StatusCode, string(body))
+	}
+
+	var details TMDBTVDetails
 	if err := json.NewDecoder(resp.Body).Decode(&details); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}

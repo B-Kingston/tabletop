@@ -11,31 +11,36 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 )
 
-// OpenAIService handles interactions with the OpenAI API
-type OpenAIService struct {
-	apiKey     string
-	baseURL    string
-	httpClient *http.Client
-	model      string
+type RateLimiter interface {
+	Incr(ctx context.Context, key string) *redis.IntCmd
+	Expire(ctx context.Context, key string, expiration time.Duration) *redis.BoolCmd
+	Get(ctx context.Context, key string) *redis.StringCmd
 }
 
-// OpenAIMessage is a single message in a chat completion
+type OpenAIService struct {
+	apiKey      string
+	baseURL     string
+	httpClient  *http.Client
+	model       string
+	rateLimiter RateLimiter
+	dailyLimit  int
+}
+
 type OpenAIMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
 
-// OpenAIRequest is the request body for chat completions
 type OpenAIRequest struct {
-	Model       string           `json:"model"`
-	Messages    []OpenAIMessage  `json:"messages"`
-	Temperature float64          `json:"temperature"`
-	Stream      bool             `json:"stream"`
+	Model       string          `json:"model"`
+	Messages    []OpenAIMessage `json:"messages"`
+	Temperature float64         `json:"temperature"`
+	Stream      bool            `json:"stream"`
 }
 
-// OpenAIResponse is the response from chat completions
 type OpenAIResponse struct {
 	ID      string `json:"id"`
 	Choices []struct {
@@ -52,7 +57,6 @@ type OpenAIResponse struct {
 	} `json:"usage"`
 }
 
-// OpenAIStreamChunk is a single chunk in a streaming response
 type OpenAIStreamChunk struct {
 	ID      string `json:"id"`
 	Choices []struct {
@@ -63,7 +67,6 @@ type OpenAIStreamChunk struct {
 	} `json:"choices"`
 }
 
-// RecipeSystemPrompt is the system prompt for recipe generation
 const RecipeSystemPrompt = `You are a helpful recipe assistant. When asked to create or suggest a recipe, 
 respond with valid JSON matching this schema:
 {
@@ -78,19 +81,39 @@ respond with valid JSON matching this schema:
 
 Always include prepTime, cookTime, and at least 2 steps. Use clear, concise markdown for step content.`
 
-// NewOpenAIService creates a new OpenAI service
-func NewOpenAIService(apiKey string) *OpenAIService {
+func NewOpenAIService(apiKey string, rateLimiter RateLimiter, dailyLimit int) *OpenAIService {
 	return &OpenAIService{
-		apiKey:  apiKey,
-		baseURL: "https://api.openai.com/v1",
-		httpClient: &http.Client{
-			Timeout: 60 * time.Second,
-		},
-		model: "gpt-4o-mini",
+		apiKey:      apiKey,
+		baseURL:     "https://api.openai.com/v1",
+		httpClient:  &http.Client{Timeout: 60 * time.Second},
+		model:       "gpt-4o-mini",
+		rateLimiter: rateLimiter,
+		dailyLimit:  dailyLimit,
 	}
 }
 
-// ChatCompletion sends a chat completion request
+func (s *OpenAIService) SetBaseURL(url string) {
+	s.baseURL = url
+}
+
+func (s *OpenAIService) CheckRateLimit(ctx context.Context, userID uuid.UUID) error {
+	if s.rateLimiter == nil {
+		return nil
+	}
+	key := fmt.Sprintf("openai_rate:%s:%s", userID.String(), time.Now().Format("2006-01-02"))
+	count, err := s.rateLimiter.Incr(ctx, key).Result()
+	if err != nil {
+		return nil
+	}
+	if count == 1 {
+		s.rateLimiter.Expire(ctx, key, 24*time.Hour)
+	}
+	if count > int64(s.dailyLimit) {
+		return fmt.Errorf("daily rate limit exceeded (%d requests)", s.dailyLimit)
+	}
+	return nil
+}
+
 func (s *OpenAIService) ChatCompletion(ctx context.Context, messages []OpenAIMessage) (*OpenAIResponse, error) {
 	reqBody := OpenAIRequest{
 		Model:       s.model,
@@ -130,8 +153,6 @@ func (s *OpenAIService) ChatCompletion(ctx context.Context, messages []OpenAIMes
 	return &result, nil
 }
 
-// ChatCompletionStream sends a streaming chat completion request
-// Returns a channel of chunks and a cancel function
 func (s *OpenAIService) ChatCompletionStream(ctx context.Context, messages []OpenAIMessage) (<-chan OpenAIStreamChunk, context.CancelFunc, error) {
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -200,12 +221,4 @@ func (s *OpenAIService) ChatCompletionStream(ctx context.Context, messages []Ope
 	}()
 
 	return chunkCh, cancel, nil
-}
-
-// CheckRateLimit checks if a user has exceeded their daily OpenAI request limit
-func (s *OpenAIService) CheckRateLimit(ctx context.Context, userID uuid.UUID, dailyLimit int) error {
-	// TODO: Implement Redis-based rate limiting
-	// Key: openai_rate:{userID}:{date}
-	// Increment on each request, reject if >= dailyLimit
-	return nil
 }

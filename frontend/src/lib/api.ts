@@ -9,18 +9,26 @@ export const api = axios.create({
   },
 })
 
-// Request interceptor to attach auth token
+let authTokenGetter: (() => Promise<string | null>) | null = null
+
+export function setAuthTokenGetter(getter: () => Promise<string | null>) {
+  authTokenGetter = getter
+}
+
 api.interceptors.request.use(async (config) => {
-  // Token will be injected by the caller or a hook using Clerk's getToken
+  if (authTokenGetter) {
+    const token = await authTokenGetter()
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+  }
   return config
 })
 
-// Response interceptor for global error handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Handle auth errors globally
       window.dispatchEvent(new CustomEvent('auth:unauthorized'))
     }
     return Promise.reject(error)

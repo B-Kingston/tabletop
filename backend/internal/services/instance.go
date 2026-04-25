@@ -12,12 +12,11 @@ import (
 
 // InstanceService handles business logic for instances
 type InstanceService struct {
-	instanceRepo *repositories.InstanceRepository
-	userRepo     *repositories.UserRepository
+	instanceRepo repositories.InstanceRepository
+	userRepo     repositories.UserRepository
 }
 
-// NewInstanceService creates a new instance service
-func NewInstanceService(instanceRepo *repositories.InstanceRepository, userRepo *repositories.UserRepository) *InstanceService {
+func NewInstanceService(instanceRepo repositories.InstanceRepository, userRepo repositories.UserRepository) *InstanceService {
 	return &InstanceService{
 		instanceRepo: instanceRepo,
 		userRepo:     userRepo,

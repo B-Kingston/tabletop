@@ -24,6 +24,7 @@ type Config struct {
 	ClerkSecretKey      string
 	ClerkPublishableKey string
 	ClerkWebhookSecret  string
+	ClerkJWKSURL        string
 
 	// External APIs
 	TMDBAPIKey    string
@@ -31,6 +32,9 @@ type Config struct {
 
 	// CORS
 	FrontendURL string
+
+	// Dev bypass
+	DevSkipAuth bool
 }
 
 // Load reads configuration from environment variables
@@ -42,17 +46,21 @@ func Load() *Config {
 		}
 	}
 
+	devSkipAuth := getEnv("DEV_SKIP_AUTH", "") == "true"
+
 	cfg := &Config{
 		Port:                getEnv("PORT", "8080"),
 		Environment:         getEnv("ENVIRONMENT", "development"),
 		DatabaseURL:         requireEnv("DATABASE_URL"),
 		RedisURL:            getEnv("REDIS_URL", "redis://localhost:6379"),
-		ClerkSecretKey:      requireEnv("CLERK_SECRET_KEY"),
+		ClerkSecretKey:      getEnv("CLERK_SECRET_KEY", ""),
 		ClerkPublishableKey: getEnv("CLERK_PUBLISHABLE_KEY", ""),
 		ClerkWebhookSecret:  getEnv("CLERK_WEBHOOK_SECRET", ""),
-		TMDBAPIKey:          requireEnv("TMDB_API_KEY"),
+		ClerkJWKSURL:        getEnv("CLERK_JWKS_URL", ""),
+		TMDBAPIKey:          getEnv("TMDB_API_KEY", ""),
 		OpenAIAPIKey:        getEnv("OPENAI_API_KEY", ""),
 		FrontendURL:         getEnv("FRONTEND_URL", "http://localhost:3000"),
+		DevSkipAuth:         devSkipAuth,
 	}
 
 	return cfg
@@ -89,8 +97,14 @@ func (c *Config) Validate() error {
 	if c.DatabaseURL == "" {
 		return fmt.Errorf("DATABASE_URL is required")
 	}
+	if c.DevSkipAuth {
+		return nil
+	}
 	if c.ClerkSecretKey == "" {
 		return fmt.Errorf("CLERK_SECRET_KEY is required")
+	}
+	if c.ClerkJWKSURL == "" {
+		return fmt.Errorf("CLERK_JWKS_URL is required")
 	}
 	if c.TMDBAPIKey == "" {
 		return fmt.Errorf("TMDB_API_KEY is required")
