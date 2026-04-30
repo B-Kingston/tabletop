@@ -44,10 +44,6 @@ export function WineCard({ wine, instanceId }: WineCardProps) {
         </span>
       </div>
 
-      {wine.producer && (
-        <p className="text-sm text-neutral-500 truncate">{wine.producer}</p>
-      )}
-
       <div className="mt-3 flex items-center justify-between">
         {wine.rating !== null && wine.rating !== undefined ? (
           <StarRating value={wine.rating} readonly size="sm" />
@@ -55,9 +51,6 @@ export function WineCard({ wine, instanceId }: WineCardProps) {
           <span className="text-xs text-neutral-400">Not rated</span>
         )}
         <div className="text-right">
-          {wine.vintage && (
-            <span className="text-xs text-neutral-500">{wine.vintage}</span>
-          )}
           {wine.cost !== null && wine.cost !== undefined && (
             <p className="text-sm font-medium text-neutral-900">
               ${wine.cost.toFixed(2)}

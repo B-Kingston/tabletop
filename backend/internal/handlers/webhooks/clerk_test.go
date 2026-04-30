@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/hex"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -27,21 +30,31 @@ func setupWebhookHandlerTest(t *testing.T) (*gin.Engine, *Handler, string) {
 	require.NoError(t, db.AutoMigrate(&models.User{}))
 
 	userRepo := repositories.NewUserRepository(db)
-	webhookSecret := "test-webhook-secret"
+	// Svix secrets are base64-encoded after the whsec_ prefix
+	rawSecret := "test-webhook-secret"
+	webhookSecret := "whsec_" + base64.StdEncoding.EncodeToString([]byte(rawSecret))
 	handler := NewHandler(userRepo, webhookSecret)
 
 	r := gin.New()
-	return r, handler, webhookSecret
+	return r, handler, rawSecret
 }
 
-func signPayload(secret string, body []byte) string {
+func signPayload(secret string, body []byte, id string, timestamp int64) string {
+	signedContent := fmt.Sprintf("%s.%d.%s", id, timestamp, string(body))
 	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write(body)
-	return hex.EncodeToString(mac.Sum(nil))
+	mac.Write([]byte(signedContent))
+	return base64.StdEncoding.EncodeToString(mac.Sum(nil))
+}
+
+func makeSvixHeaders(secret string, body []byte) (string, string, string) {
+	id := "msg_123"
+	ts := time.Now().Unix()
+	sig := signPayload(secret, body, id, ts)
+	return id, strconv.FormatInt(ts, 10), "v1," + sig
 }
 
 func TestHandler_UserCreated(t *testing.T) {
-	r, handler, secret := setupWebhookHandlerTest(t)
+	r, handler, rawSecret := setupWebhookHandlerTest(t)
 
 	r.POST("/webhooks/clerk", handler.HandleClerkWebhook)
 
@@ -55,10 +68,13 @@ func TestHandler_UserCreated(t *testing.T) {
 	event.Data.LastName = "Doe"
 
 	body, _ := json.Marshal(event)
+	svixID, svixTs, svixSig := makeSvixHeaders(rawSecret, body)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/webhooks/clerk", bytes.NewReader(body))
-	req.Header.Set("svix-signature", signPayload(secret, body))
+	req.Header.Set("svix-id", svixID)
+	req.Header.Set("svix-timestamp", svixTs)
+	req.Header.Set("svix-signature", svixSig)
 	req.Header.Set("Content-Type", "application/json")
 	r.ServeHTTP(w, req)
 
@@ -72,7 +88,7 @@ func TestHandler_UserCreated(t *testing.T) {
 }
 
 func TestHandler_UserUpdated(t *testing.T) {
-	r, handler, secret := setupWebhookHandlerTest(t)
+	r, handler, rawSecret := setupWebhookHandlerTest(t)
 
 	r.POST("/webhooks/clerk", handler.HandleClerkWebhook)
 
@@ -85,10 +101,13 @@ func TestHandler_UserUpdated(t *testing.T) {
 	createEvent.Data.FirstName = "Jane"
 
 	body, _ := json.Marshal(createEvent)
+	svixID, svixTs, svixSig := makeSvixHeaders(rawSecret, body)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/webhooks/clerk", bytes.NewReader(body))
-	req.Header.Set("svix-signature", signPayload(secret, body))
+	req.Header.Set("svix-id", svixID)
+	req.Header.Set("svix-timestamp", svixTs)
+	req.Header.Set("svix-signature", svixSig)
 	req.Header.Set("Content-Type", "application/json")
 	r.ServeHTTP(w, req)
 	require.Equal(t, http.StatusOK, w.Code)
@@ -103,10 +122,13 @@ func TestHandler_UserUpdated(t *testing.T) {
 	updateEvent.Data.LastName = "Smith"
 
 	body, _ = json.Marshal(updateEvent)
+	svixID, svixTs, svixSig = makeSvixHeaders(rawSecret, body)
 
 	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("POST", "/webhooks/clerk", bytes.NewReader(body))
-	req.Header.Set("svix-signature", signPayload(secret, body))
+	req.Header.Set("svix-id", svixID)
+	req.Header.Set("svix-timestamp", svixTs)
+	req.Header.Set("svix-signature", svixSig)
 	req.Header.Set("Content-Type", "application/json")
 	r.ServeHTTP(w, req)
 
@@ -120,7 +142,7 @@ func TestHandler_UserUpdated(t *testing.T) {
 }
 
 func TestHandler_UserDeleted(t *testing.T) {
-	r, handler, secret := setupWebhookHandlerTest(t)
+	r, handler, rawSecret := setupWebhookHandlerTest(t)
 
 	r.POST("/webhooks/clerk", handler.HandleClerkWebhook)
 
@@ -133,10 +155,13 @@ func TestHandler_UserDeleted(t *testing.T) {
 	createEvent.Data.FirstName = "ToDelete"
 
 	body, _ := json.Marshal(createEvent)
+	svixID, svixTs, svixSig := makeSvixHeaders(rawSecret, body)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/webhooks/clerk", bytes.NewReader(body))
-	req.Header.Set("svix-signature", signPayload(secret, body))
+	req.Header.Set("svix-id", svixID)
+	req.Header.Set("svix-timestamp", svixTs)
+	req.Header.Set("svix-signature", svixSig)
 	req.Header.Set("Content-Type", "application/json")
 	r.ServeHTTP(w, req)
 	require.Equal(t, http.StatusOK, w.Code)
@@ -146,10 +171,13 @@ func TestHandler_UserDeleted(t *testing.T) {
 	deleteEvent.Data.ID = "clerk_789"
 
 	body, _ = json.Marshal(deleteEvent)
+	svixID, svixTs, svixSig = makeSvixHeaders(rawSecret, body)
 
 	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("POST", "/webhooks/clerk", bytes.NewReader(body))
-	req.Header.Set("svix-signature", signPayload(secret, body))
+	req.Header.Set("svix-id", svixID)
+	req.Header.Set("svix-timestamp", svixTs)
+	req.Header.Set("svix-signature", svixSig)
 	req.Header.Set("Content-Type", "application/json")
 	r.ServeHTTP(w, req)
 
@@ -169,7 +197,9 @@ func TestHandler_InvalidSignature(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/webhooks/clerk", bytes.NewReader(body))
-	req.Header.Set("svix-signature", "invalid-signature")
+	req.Header.Set("svix-id", "msg_bad")
+	req.Header.Set("svix-timestamp", strconv.FormatInt(time.Now().Unix(), 10))
+	req.Header.Set("svix-signature", "v1,invalid-signature")
 	req.Header.Set("Content-Type", "application/json")
 	r.ServeHTTP(w, req)
 
@@ -177,7 +207,7 @@ func TestHandler_InvalidSignature(t *testing.T) {
 }
 
 func TestHandler_UnhandledEventType(t *testing.T) {
-	r, handler, secret := setupWebhookHandlerTest(t)
+	r, handler, rawSecret := setupWebhookHandlerTest(t)
 
 	r.POST("/webhooks/clerk", handler.HandleClerkWebhook)
 
@@ -185,10 +215,13 @@ func TestHandler_UnhandledEventType(t *testing.T) {
 	event.Type = "session.created"
 
 	body, _ := json.Marshal(event)
+	svixID, svixTs, svixSig := makeSvixHeaders(rawSecret, body)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/webhooks/clerk", bytes.NewReader(body))
-	req.Header.Set("svix-signature", signPayload(secret, body))
+	req.Header.Set("svix-id", svixID)
+	req.Header.Set("svix-timestamp", svixTs)
+	req.Header.Set("svix-signature", svixSig)
 	req.Header.Set("Content-Type", "application/json")
 	r.ServeHTTP(w, req)
 
@@ -197,13 +230,18 @@ func TestHandler_UnhandledEventType(t *testing.T) {
 }
 
 func TestHandler_InvalidPayload(t *testing.T) {
-	r, handler, secret := setupWebhookHandlerTest(t)
+	r, handler, rawSecret := setupWebhookHandlerTest(t)
 
 	r.POST("/webhooks/clerk", handler.HandleClerkWebhook)
 
+	body := []byte("not json")
+	svixID, svixTs, svixSig := makeSvixHeaders(rawSecret, body)
+
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/webhooks/clerk", bytes.NewReader([]byte("not json")))
-	req.Header.Set("svix-signature", signPayload(secret, []byte("not json")))
+	req, _ := http.NewRequest("POST", "/webhooks/clerk", bytes.NewReader(body))
+	req.Header.Set("svix-id", svixID)
+	req.Header.Set("svix-timestamp", svixTs)
+	req.Header.Set("svix-signature", svixSig)
 	req.Header.Set("Content-Type", "application/json")
 	r.ServeHTTP(w, req)
 

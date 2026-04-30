@@ -44,6 +44,21 @@ lint-frontend:
 migrate:
 	@cd backend && go run ./cmd/api migrate
 
+migrate-up:
+	@echo "Running goose up..."
+	@cd backend && go run -tags="$(shell cd backend && go list -m github.com/pressly/goose/v3 | awk '{print $$2}')" github.com/pressly/goose/v3/cmd/goose@latest -dir=migrations postgres "$$DATABASE_URL" up
+
+migrate-down:
+	@echo "Running goose down (1 step)..."
+	@cd backend && go run github.com/pressly/goose/v3/cmd/goose@latest -dir=migrations postgres "$$DATABASE_URL" down
+
+migrate-create:
+	@read -p "Migration name: " name; \
+	cd backend && go run github.com/pressly/goose/v3/cmd/goose@latest -dir=migrations create "$$name" sql
+
+migrate-status:
+	@cd backend && go run github.com/pressly/goose/v3/cmd/goose@latest -dir=migrations postgres "$$DATABASE_URL" status
+
 # Install
 install:
 	@cd frontend && npm install

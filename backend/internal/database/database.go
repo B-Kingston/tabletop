@@ -2,10 +2,12 @@ package database
 
 import (
 	"fmt"
+	"io/fs"
 
 	"tabletop/backend/internal/config"
 	"tabletop/backend/internal/models"
 
+	"github.com/pressly/goose/v3"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -33,7 +35,26 @@ func New(cfg *config.Config) (*DB, error) {
 	return &DB{db}, nil
 }
 
-// AutoMigrate runs database migrations for all models
+// Migrate runs all pending goose migrations from the given embedded filesystem
+func (db *DB) Migrate(migrationsFS fs.FS, migrationsDir string) error {
+	sqlDB, err := db.DB.DB()
+	if err != nil {
+		return fmt.Errorf("failed to get underlying sql.DB: %w", err)
+	}
+
+	goose.SetBaseFS(migrationsFS)
+
+	if err := goose.SetDialect("postgres"); err != nil {
+		return fmt.Errorf("failed to set goose dialect: %w", err)
+	}
+
+	if err := goose.Up(sqlDB, migrationsDir); err != nil {
+		return fmt.Errorf("goose up failed: %w", err)
+	}
+	return nil
+}
+
+// AutoMigrate runs GORM auto-migration for all models (used in tests with SQLite)
 func (db *DB) AutoMigrate() error {
 	return db.DB.AutoMigrate(
 		&models.User{},

@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { useParams } from '@tanstack/react-router'
+import { useParams, useNavigate } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
-import { Search } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { useWines } from '@/hooks/useWines'
+import { Button } from '@/components/ui/Button'
 import { GridSkeleton } from '@/components/ui/LoadingSkeleton'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { WineCard } from '@/components/wine/WineCard'
@@ -21,6 +22,7 @@ type SortOption = 'rating' | 'date' | 'cost'
 
 export function WineList() {
   const { instanceId } = useParams({ strict: false }) as { instanceId: string }
+  const navigate = useNavigate()
   const [typeFilter, setTypeFilter] = useState('')
   const [sortBy, setSortBy] = useState<SortOption>('date')
   const { data: wines, isLoading, error } = useWines(instanceId, typeFilter || undefined)
@@ -46,6 +48,18 @@ export function WineList() {
       >
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Wines</h1>
+          <Button
+            size="sm"
+            onClick={() =>
+              navigate({
+                to: '/instances/$instanceId/wines/new',
+                params: { instanceId },
+              })
+            }
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            New Wine
+          </Button>
         </div>
 
         <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between">

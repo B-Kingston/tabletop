@@ -23,6 +23,7 @@ import (
 	"tabletop/backend/internal/handlers/webhooks"
 	"tabletop/backend/internal/middleware"
 	"tabletop/backend/internal/models"
+	"tabletop/backend/migrations"
 	redisc "tabletop/backend/internal/redis"
 	"tabletop/backend/internal/repositories"
 	"tabletop/backend/internal/services"
@@ -46,7 +47,7 @@ func main() {
 	}
 	defer db.Close()
 
-	if err := db.AutoMigrate(); err != nil {
+	if err := db.Migrate(migrations.FS, "."); err != nil {
 		slog.Error("failed to run migrations", "error", err)
 		os.Exit(1)
 	}
@@ -153,7 +154,7 @@ func main() {
 		chatHandler.RegisterRoutes(instance)
 		tmdbHandler.RegisterRoutes(instance)
 		aiHandler.RegisterRoutes(instance)
-		instance.GET("/ws", ws.ServeWS(hub, db.DB))
+		instance.GET("/ws", ws.ServeWS(hub, db.DB, cfg.FrontendURL))
 	}
 
 	srv := &http.Server{

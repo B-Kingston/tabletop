@@ -28,6 +28,7 @@ export interface MediaItem {
   overview: string
   posterPath: string
   releaseDate: string | null
+  planToWatchDate: string | null
   status: 'planning' | 'watching' | 'completed' | 'dropped'
   rating: number | null
   review: string
@@ -87,11 +88,8 @@ export interface Wine {
   id: string
   instanceId: string
   name: string
-  producer: string
   type: 'red' | 'white' | 'rose' | 'sparkling' | 'port'
-  vintage: number | null
   cost: number | null
-  currency: string
   rating: number | null
   notes: string
   consumedAt: string | null

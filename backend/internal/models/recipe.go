@@ -43,6 +43,7 @@ type Ingredient struct {
 	Name     string    `gorm:"not null" json:"name"`
 	Quantity string    `json:"quantity"`
 	Unit     string    `json:"unit"`
+	Cost     *float64  `json:"cost"`
 	Optional bool      `gorm:"default:false" json:"optional"`
 }
 

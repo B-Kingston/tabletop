@@ -34,11 +34,8 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 
 type CreateRequest struct {
 	Name       string   `json:"name" binding:"required"`
-	Producer   string   `json:"producer"`
 	Type       string   `json:"type" binding:"required,oneof=red white rose sparkling port"`
-	Vintage    *int     `json:"vintage"`
 	Cost       *float64 `json:"cost"`
-	Currency   string   `json:"currency"`
 	Rating     *float32 `json:"rating"`
 	Notes      string   `json:"notes"`
 	ConsumedAt *string  `json:"consumedAt"`
@@ -46,21 +43,18 @@ type CreateRequest struct {
 
 type UpdateRequest struct {
 	Name       *string  `json:"name"`
-	Producer   *string  `json:"producer"`
 	Type       *string  `json:"type" binding:"omitempty,oneof=red white rose sparkling port"`
-	Vintage    *int     `json:"vintage"`
 	Cost       *float64 `json:"cost"`
-	Currency   *string  `json:"currency"`
 	Rating     *float32 `json:"rating"`
 	Notes      *string  `json:"notes"`
 	ConsumedAt *string  `json:"consumedAt"`
 }
 
-func parseConsumedAt(s *string) (*time.Time, error) {
-	if s == nil {
+func parseDate(s *string) (*time.Time, error) {
+	if s == nil || *s == "" {
 		return nil, nil
 	}
-	t, err := time.Parse(time.RFC3339, *s)
+	t, err := time.Parse("2006-01-02", *s)
 	if err != nil {
 		return nil, err
 	}
@@ -86,16 +80,16 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	consumedAt, err := parseConsumedAt(req.ConsumedAt)
+	consumedAt, err := parseDate(req.ConsumedAt)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid consumedAt format, expected ISO 8601"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid consumedAt format, expected YYYY-MM-DD"})
 		return
 	}
 
 	wine, err := h.service.Create(
 		c.Request.Context(), instanceID, userID,
-		req.Name, req.Producer, req.Type,
-		req.Vintage, req.Cost, req.Currency,
+		req.Name, req.Type,
+		req.Cost,
 		req.Rating, req.Notes, consumedAt,
 	)
 	if err != nil {
@@ -171,16 +165,16 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
-	consumedAt, err := parseConsumedAt(req.ConsumedAt)
+	consumedAt, err := parseDate(req.ConsumedAt)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid consumedAt format, expected ISO 8601"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid consumedAt format, expected YYYY-MM-DD"})
 		return
 	}
 
 	wine, err := h.service.Update(
 		c.Request.Context(), instanceID, wineID, userID,
-		req.Name, req.Producer, req.Type,
-		req.Vintage, req.Cost, req.Currency,
+		req.Name, req.Type,
+		req.Cost,
 		req.Rating, req.Notes, consumedAt,
 	)
 	if err != nil {

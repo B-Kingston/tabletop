@@ -26,6 +26,7 @@ export function MediaDetail() {
   const [status, setStatus] = useState<string | null>(null)
   const [rating, setRating] = useState<number | null>(null)
   const [review, setReview] = useState<string | null>(null)
+  const [planToWatchDate, setPlanToWatchDate] = useState<string | null>(null)
 
   if (isLoading) {
     return <DetailSkeleton />
@@ -42,6 +43,7 @@ export function MediaDetail() {
   const currentStatus = status ?? media.status
   const currentRating = rating ?? media.rating ?? 0
   const currentReview = review ?? media.review
+  const currentPlanToWatchDate = planToWatchDate ?? media.planToWatchDate ?? ''
 
   function handleSave() {
     updateMedia.mutate({
@@ -49,6 +51,7 @@ export function MediaDetail() {
       status: currentStatus,
       rating: currentRating || null,
       review: currentReview,
+      planToWatchDate: currentPlanToWatchDate || null,
     })
   }
 
@@ -129,6 +132,21 @@ export function MediaDetail() {
                   ))}
                 </div>
               </div>
+
+              {currentStatus === 'planning' && (
+                <div>
+                  <label htmlFor="plan-date" className="block text-sm font-medium text-neutral-700 mb-1">
+                    Plan to Watch
+                  </label>
+                  <input
+                    id="plan-date"
+                    type="date"
+                    value={currentPlanToWatchDate}
+                    onChange={(e) => setPlanToWatchDate(e.target.value)}
+                    className="block w-full rounded-lg border-0 py-2.5 px-3 text-neutral-900 shadow-sm ring-1 ring-inset ring-neutral-200 placeholder:text-neutral-400 focus:ring-2 focus:ring-inset focus:ring-neutral-900 sm:text-sm sm:leading-6"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Rating</label>

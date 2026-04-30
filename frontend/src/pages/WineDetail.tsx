@@ -21,22 +21,20 @@ export function WineDetail() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState('')
-  const [producer, setProducer] = useState('')
   const [type, setType] = useState('red')
-  const [vintage, setVintage] = useState('')
   const [cost, setCost] = useState('')
   const [rating, setRating] = useState(0)
   const [notes, setNotes] = useState('')
+  const [consumedAt, setConsumedAt] = useState('')
 
   useEffect(() => {
     if (wine) {
       setName(wine.name)
-      setProducer(wine.producer ?? '')
       setType(wine.type)
-      setVintage(wine.vintage?.toString() ?? '')
       setCost(wine.cost?.toString() ?? '')
       setRating(wine.rating ?? 0)
       setNotes(wine.notes ?? '')
+      setConsumedAt(wine.consumedAt ?? '')
     }
   }, [wine])
 
@@ -55,12 +53,11 @@ export function WineDetail() {
       {
         wineId,
         name,
-        producer: producer || undefined,
         type,
-        vintage: vintage ? Number(vintage) : null,
         cost: cost ? Number(cost) : null,
         rating: rating || null,
         notes: notes || undefined,
+        consumedAt: consumedAt || null,
       },
       {
         onSuccess: () => setEditing(false),
@@ -93,7 +90,6 @@ export function WineDetail() {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-neutral-900">{wine.name}</h1>
-              {wine.producer && <p className="text-neutral-500 mt-1">{wine.producer}</p>}
             </div>
             <div className="flex gap-2">
               <Button variant="secondary" size="sm" onClick={() => setEditing(!editing)}>
@@ -117,10 +113,6 @@ export function WineDetail() {
                 <Input id="wine-name" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div>
-                <label htmlFor="wine-producer" className="block text-sm font-medium text-neutral-700 mb-1">Producer</label>
-                <Input id="wine-producer" value={producer} onChange={(e) => setProducer(e.target.value)} />
-              </div>
-              <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Type</label>
                 <div className="flex flex-wrap gap-2">
                   {wineTypes.map((t) => (
@@ -138,12 +130,12 @@ export function WineDetail() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="wine-vintage" className="block text-sm font-medium text-neutral-700 mb-1">Vintage</label>
-                  <Input id="wine-vintage" type="number" value={vintage} onChange={(e) => setVintage(e.target.value)} />
-                </div>
-                <div>
                   <label htmlFor="wine-cost" className="block text-sm font-medium text-neutral-700 mb-1">Cost ($)</label>
                   <Input id="wine-cost" type="number" step="0.01" value={cost} onChange={(e) => setCost(e.target.value)} />
+                </div>
+                <div>
+                  <label htmlFor="wine-consumed" className="block text-sm font-medium text-neutral-700 mb-1">Consumed</label>
+                  <Input id="wine-consumed" type="date" value={consumedAt} onChange={(e) => setConsumedAt(e.target.value)} />
                 </div>
               </div>
               <div>
@@ -171,16 +163,16 @@ export function WineDetail() {
                   <span className="text-neutral-500">Type</span>
                   <p className="font-medium text-neutral-900 capitalize">{wine.type === 'rose' ? 'Rosé' : wine.type}</p>
                 </div>
-                {wine.vintage && (
-                  <div>
-                    <span className="text-neutral-500">Vintage</span>
-                    <p className="font-medium text-neutral-900">{wine.vintage}</p>
-                  </div>
-                )}
                 {wine.cost !== null && wine.cost !== undefined && (
                   <div>
                     <span className="text-neutral-500">Cost</span>
                     <p className="font-medium text-neutral-900">${wine.cost.toFixed(2)}</p>
+                  </div>
+                )}
+                {wine.consumedAt && (
+                  <div>
+                    <span className="text-neutral-500">Consumed</span>
+                    <p className="font-medium text-neutral-900">{new Date(wine.consumedAt + 'T00:00:00').toLocaleDateString()}</p>
                   </div>
                 )}
                 <div>

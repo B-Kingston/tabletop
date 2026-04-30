@@ -53,10 +53,11 @@ export function useUpdateMedia(instanceId: string) {
       status?: string
       rating?: number | null
       review?: string
+      planToWatchDate?: string | null
     }) => {
       const { data } = await api.patch<{ data: MediaItem }>(
         `/instances/${instanceId}/media/${input.mediaId}`,
-        { status: input.status, rating: input.rating, review: input.review }
+        { status: input.status, rating: input.rating, review: input.review, planToWatchDate: input.planToWatchDate }
       )
       return data.data
     },

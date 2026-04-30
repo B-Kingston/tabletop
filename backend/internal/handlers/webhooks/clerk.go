@@ -3,10 +3,15 @@ package webhooks
 import (
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/hex"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"tabletop/backend/internal/models"
@@ -42,11 +47,34 @@ type ClerkWebhookEvent struct {
 	} `json:"data"`
 }
 
-func (h *Handler) verifySignature(body []byte, sig string) bool {
-	mac := hmac.New(sha256.New, []byte(h.webhookSecret))
-	mac.Write(body)
-	expected := hex.EncodeToString(mac.Sum(nil))
-	return hmac.Equal([]byte(sig), []byte(expected))
+// verifySvixSignature verifies a Svix webhook signature.
+// Clerk uses Svix for webhooks. The signing secret starts with "whsec_" and is
+// base64-encoded after the prefix. The signed payload is:
+//   ${svix-id}.${svix-timestamp}.${body}
+func (h *Handler) verifySvixSignature(body []byte, id, timestamp, signature string) bool {
+	if !strings.HasPrefix(h.webhookSecret, "whsec_") {
+		slog.Warn("webhook secret missing whsec_ prefix, treating as raw bytes")
+		return false
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(h.webhookSecret, "whsec_"))
+	if err != nil {
+		slog.Warn("failed to decode webhook secret", "error", err)
+		return false
+	}
+
+	signedContent := fmt.Sprintf("%s.%s.%s", id, timestamp, string(body))
+	mac := hmac.New(sha256.New, decoded)
+	mac.Write([]byte(signedContent))
+	expected := base64.StdEncoding.EncodeToString(mac.Sum(nil))
+
+	parts := strings.Split(signature, ",")
+	for _, part := range parts {
+		if strings.TrimPrefix(part, "v1=") == expected || strings.TrimPrefix(part, "v1") == expected {
+			return true
+		}
+	}
+	return false
 }
 
 func (h *Handler) HandleClerkWebhook(c *gin.Context) {
@@ -56,14 +84,29 @@ func (h *Handler) HandleClerkWebhook(c *gin.Context) {
 		return
 	}
 
-	sig := c.GetHeader("svix-signature")
-	if sig == "" {
-		sig = c.GetHeader("X-Signature")
-	}
+	if h.webhookSecret != "" {
+		svixID := c.GetHeader("svix-id")
+		svixTimestamp := c.GetHeader("svix-timestamp")
+		svixSignature := c.GetHeader("svix-signature")
 
-	if h.webhookSecret != "" && !h.verifySignature(body, sig) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid signature"})
-		return
+		if svixID == "" || svixTimestamp == "" || svixSignature == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "missing svix headers"})
+			return
+		}
+
+		// Reject webhooks older than 5 minutes to prevent replay attacks
+		ts, err := strconv.ParseInt(svixTimestamp, 10, 64)
+		if err != nil || time.Since(time.Unix(ts, 0)) > 5*time.Minute {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "stale webhook"})
+			return
+		}
+
+		if !h.verifySvixSignature(body, svixID, svixTimestamp, svixSignature) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid signature"})
+			return
+		}
+	} else {
+		slog.Warn("CLERK_WEBHOOK_SECRET not set, skipping webhook signature verification")
 	}
 
 	var event ClerkWebhookEvent

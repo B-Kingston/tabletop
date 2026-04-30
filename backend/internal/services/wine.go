@@ -18,18 +18,12 @@ func NewWineService(wineRepo repositories.WineRepository) *WineService {
 	return &WineService{wineRepo: wineRepo}
 }
 
-func (s *WineService) Create(ctx context.Context, instanceID, userID uuid.UUID, name, producer, wineType string, vintage *int, cost *float64, currency string, rating *float32, notes string, consumedAt *time.Time) (*models.Wine, error) {
-	if currency == "" {
-		currency = "AUD"
-	}
+func (s *WineService) Create(ctx context.Context, instanceID, userID uuid.UUID, name, wineType string, cost *float64, rating *float32, notes string, consumedAt *time.Time) (*models.Wine, error) {
 	wine := &models.Wine{
 		InstanceID:  instanceID,
 		Name:        name,
-		Producer:    producer,
 		Type:        models.WineType(wineType),
-		Vintage:     vintage,
 		Cost:        cost,
-		Currency:    currency,
 		Rating:      rating,
 		Notes:       notes,
 		ConsumedAt:  consumedAt,
@@ -57,7 +51,7 @@ func (s *WineService) List(ctx context.Context, instanceID uuid.UUID, wineType s
 	return s.wineRepo.List(ctx, instanceID, wineType)
 }
 
-func (s *WineService) Update(ctx context.Context, instanceID, id, userID uuid.UUID, name, producer, wineType *string, vintage *int, cost *float64, currency *string, rating *float32, notes *string, consumedAt *time.Time) (*models.Wine, error) {
+func (s *WineService) Update(ctx context.Context, instanceID, id, userID uuid.UUID, name, wineType *string, cost *float64, rating *float32, notes *string, consumedAt *time.Time) (*models.Wine, error) {
 	wine, err := s.wineRepo.GetByID(ctx, instanceID, id)
 	if err != nil {
 		return nil, err
@@ -69,20 +63,11 @@ func (s *WineService) Update(ctx context.Context, instanceID, id, userID uuid.UU
 	if name != nil {
 		wine.Name = *name
 	}
-	if producer != nil {
-		wine.Producer = *producer
-	}
 	if wineType != nil {
 		wine.Type = models.WineType(*wineType)
 	}
-	if vintage != nil {
-		wine.Vintage = vintage
-	}
 	if cost != nil {
 		wine.Cost = cost
-	}
-	if currency != nil {
-		wine.Currency = *currency
 	}
 	if rating != nil {
 		wine.Rating = rating

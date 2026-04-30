@@ -11,6 +11,7 @@ import (
 type Instance struct {
 	UUIDModel
 	Name         string    `gorm:"not null" json:"name"`
+	Description  string    `json:"description"`
 	OwnerID      uuid.UUID `gorm:"type:uuid;not null" json:"ownerId"`
 	JoinPassword string    `gorm:"not null" json:"-"` // bcrypt hashed, never serialized
 	IsPublic     bool      `gorm:"default:false" json:"isPublic"`

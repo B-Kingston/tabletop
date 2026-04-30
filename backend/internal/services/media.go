@@ -54,7 +54,7 @@ func (s *MediaService) List(ctx context.Context, instanceID uuid.UUID, status, m
 	return s.mediaRepo.List(ctx, instanceID, status, mediaType)
 }
 
-func (s *MediaService) Update(ctx context.Context, instanceID, id, userID uuid.UUID, status string, rating *float32, review string) (*models.MediaItem, error) {
+func (s *MediaService) Update(ctx context.Context, instanceID, id, userID uuid.UUID, status string, rating *float32, review string, planToWatchDate *time.Time) (*models.MediaItem, error) {
 	item, err := s.mediaRepo.GetByID(ctx, instanceID, id)
 	if err != nil {
 		return nil, err
@@ -71,6 +71,9 @@ func (s *MediaService) Update(ctx context.Context, instanceID, id, userID uuid.U
 	}
 	if review != "" {
 		item.Review = review
+	}
+	if planToWatchDate != nil {
+		item.PlanToWatchDate = planToWatchDate
 	}
 	item.UpdatedByID = userID
 

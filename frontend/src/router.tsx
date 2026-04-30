@@ -10,6 +10,7 @@ import { RecipeEdit } from './pages/RecipeEdit'
 import { CookingView } from './pages/CookingView'
 import { WineList } from './pages/WineList'
 import { WineDetail } from './pages/WineDetail'
+import { WineEdit } from './pages/WineEdit'
 import { ChatPage } from './pages/ChatPage'
 
 const rootRoute = createRootRoute({ component: Outlet })
@@ -32,6 +33,7 @@ const recipeNewRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, 
 const recipeEditRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path: '/recipes/$recipeId/edit', component: RecipeEdit })
 const cookingViewRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path: '/recipes/$recipeId/cook', component: CookingView })
 const wineListRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path: '/wines', component: WineList })
+const wineNewRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path: '/wines/new', component: WineEdit })
 const wineDetailRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path: '/wines/$wineId', component: WineDetail })
 const chatRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path: '/chat', component: ChatPage })
 
@@ -47,6 +49,7 @@ const routeTree = rootRoute.addChildren([
     recipeEditRoute,
     cookingViewRoute,
     wineListRoute,
+    wineNewRoute,
     wineDetailRoute,
     chatRoute,
   ]),

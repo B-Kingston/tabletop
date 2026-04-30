@@ -4,11 +4,8 @@ import type { Wine } from '@/types/models'
 
 interface WineInput {
   name: string
-  producer?: string
   type: string
-  vintage?: number | null
   cost?: number | null
-  currency?: string
   rating?: number | null
   notes?: string
   consumedAt?: string | null

@@ -39,9 +39,10 @@ type createRequest struct {
 }
 
 type updateRequest struct {
-	Status string  `json:"status" binding:"omitempty,oneof=planning watching completed dropped"`
-	Rating *float32 `json:"rating" binding:"omitempty,min=1,max=10"`
-	Review string  `json:"review"`
+	Status          string   `json:"status" binding:"omitempty,oneof=planning watching completed dropped"`
+	Rating          *float32 `json:"rating" binding:"omitempty,min=0,max=5"`
+	Review          string   `json:"review"`
+	PlanToWatchDate *string  `json:"planToWatchDate"`
 }
 
 func (h *Handler) Create(c *gin.Context) {
@@ -158,7 +159,17 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
-	item, err := h.service.Update(c.Request.Context(), instanceID, mediaID, userID, req.Status, req.Rating, req.Review)
+	var planToWatchDate *time.Time
+	if req.PlanToWatchDate != nil && *req.PlanToWatchDate != "" {
+		t, err := time.Parse("2006-01-02", *req.PlanToWatchDate)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid planToWatchDate format, expected YYYY-MM-DD"})
+			return
+		}
+		planToWatchDate = &t
+	}
+
+	item, err := h.service.Update(c.Request.Context(), instanceID, mediaID, userID, req.Status, req.Rating, req.Review, planToWatchDate)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return

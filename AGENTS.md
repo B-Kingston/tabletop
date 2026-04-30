@@ -52,6 +52,50 @@ All AI agents and human developers must follow this document. It is non-negotiab
 - **Performance is UX.** Target <100ms API responses, <2s initial page load.
 - **Testability first.** If code is hard to test, the design is wrong. Refactor until it's testable.
 
+## Database Migrations (ENFORCED)
+
+We use **Goose** for versioned SQL migrations. GORM `AutoMigrate` is deprecated for production schema changes — it is kept only for SQLite in-memory unit tests.
+
+### When a migration is MANDATORY
+
+Create a new `.sql` migration file **before any code that depends on the new schema ships** when you:
+
+- Add, drop, or rename a column
+- Add, drop, or rename a table
+- Add or remove an index
+- Add or modify a constraint (UNIQUE, CHECK, FK)
+- Change a column type or default value
+- Add a new enum value that requires DB-level enforcement
+- Any DDL change that the existing schema does not satisfy
+
+### Workflow
+
+1. **Write the migration first.** Never let application code reference columns/tables that do not exist yet.
+2. **Create the file:**
+   ```bash
+   make migrate-create
+   # Enter descriptive name, e.g. "add_wine_vineyard_column"
+   ```
+3. **Edit the generated `.sql` file.** Both `+goose Up` and `+goose Down` blocks must be present:
+   ```sql
+   -- +goose Up
+   ALTER TABLE wines ADD COLUMN vineyard VARCHAR(255);
+
+   -- +goose Down
+   ALTER TABLE wines DROP COLUMN vineyard;
+   ```
+4. **Test locally against a real PostgreSQL database.** SQLite is not a substitute for Postgres DDL validation. Use `make migrate-up` with your local `DATABASE_URL`.
+5. **Review the migration in PR.** The `.sql` file must be reviewed just like Go code.
+6. **Deploy.** The app runs `goose.Up` automatically at startup — migrations apply before the server accepts traffic.
+
+### Rules
+
+- **No schema change ships without a migration file.** If a PR touches GORM model tags that affect DDL, it must include a migration.
+- **Down migrations must be reversible.** Every `Up` has a corresponding `Down` that restores the prior state.
+- **Migrations are immutable after merge.** If a merged migration is wrong, create a *new* migration that fixes it. Never edit a migration that has already been deployed.
+- **No raw SQL in handlers.** If you need a migration, write it in the migrations directory, not inline in a repository or handler.
+- **GORM models and migrations must stay in sync.** The GORM model tags are documentation and query-building metadata, not the schema source of truth. The `.sql` file is the source of truth.
+
 ## Data Decisions (Locked)
 
 - **Wine cost:** Per bottle, stored as decimal (dollars.cents). Currency field default AUD.
