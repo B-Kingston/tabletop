@@ -10,6 +10,114 @@ All AI agents and human developers must follow this document. It is non-negotiab
 - **External:** TMDB API, OpenAI API (server-side proxy with rate limiting)
 - **Editor:** Plate (Slate-based rich text) for recipe editing, serialized to markdown
 
+## Project Directory Map (LIVING DOCUMENT — KEEP UPDATED)
+
+All agents MUST consult this map before creating, moving, or deleting files. If your work changes the directory structure (new packages, renamed folders, new top-level files), update this section immediately.
+
+### Root Level
+
+```
+tabletop/
+├── .env                          # Production env (gitignored)
+├── .env.dev                      # Dev env (gitignored)
+├── .env.dev.example              # Dev env template
+├── .env.example                  # Production env template
+├── .gitignore
+├── AGENTS.md                     # This document
+├── Makefile                      # Shortcuts: dev, test, build, lint, migrate-*
+├── README.md
+├── SETUP.md
+├── PLAN.md
+├── CLAUDE.md
+├── docker-compose.yml            # Postgres 16 + Redis 7
+├── run.sh                        # Frontend Docker build → Nginx on :3000
+├── dev.sh                        # Native backend + frontend, Docker infra only
+├── backend.sh                    # Fly.io deploy / logs / secrets / migrate
+├── backend/
+└── frontend/
+```
+
+### Backend (`backend/`)
+
+```
+backend/
+├── cmd/
+│   └── api/
+│       └── main.go               # Entry point: config → DB → migrations → DI → routes → server
+├── internal/
+│   ├── config/                   # Env loader + validation
+│   ├── database/                 # GORM + Postgres/SQLite init, migration runner
+│   ├── handlers/                 # HTTP handlers (by domain)
+│   │   ├── ai/                   # OpenAI proxy handler
+│   │   ├── auth/                 # Auth routes
+│   │   ├── chat/                 # Chat session/message handlers
+│   │   ├── instances/            # Instance CRUD + membership
+│   │   ├── media/                # Media (TMDB-linked) handlers
+│   │   ├── nights/               # Game-night handlers
+│   │   ├── recipes/              # Recipe handlers
+│   │   ├── tmdb/                 # TMDB proxy/search handlers
+│   │   ├── webhooks/             # Clerk webhook handler (user sync)
+│   │   └── wines/                # Wine handlers
+│   ├── middleware/               # Auth, CORS, instance membership
+│   ├── models/                   # GORM models (base, user, instance, media, night, recipe, chat, wine)
+│   ├── redis/                    # go-redis client wrapper
+│   ├── repositories/             # Data access layer (interfaces + implementations)
+│   ├── services/                 # Business logic layer
+│   ├── utils/                    # GORM scopes (e.g. instance_id filter)
+│   └── websocket/                # Real-time hub, client, handler
+├── migrations/                   # Goose SQL migrations + embed.go
+├── tests/
+│   └── integration/              # Cross-instance security tests
+├── .air.toml                     # Air hot-reload config
+├── Dockerfile                    # Multi-stage Go build → Alpine
+├── fly.toml                      # Fly.io app config
+├── go.mod
+└── go.sum
+```
+
+### Frontend (`frontend/`)
+
+```
+frontend/
+├── src/
+│   ├── App.tsx                   # Router provider
+│   ├── main.tsx                  # React 18 root render
+│   ├── router.tsx                # TanStack Router route tree
+│   ├── index.css                 # Tailwind entry + global styles
+│   ├── __tests__/                # Vitest setup + MSW handlers
+│   ├── components/               # UI components (by domain)
+│   │   ├── chat/
+│   │   ├── layout/
+│   │   ├── media/
+│   │   ├── night/
+│   │   ├── recipe/
+│   │   ├── ui/                   # shadcn/ui-style primitives
+│   │   └── wine/
+│   ├── hooks/                    # Custom data-fetching hooks (by domain)
+│   ├── lib/                      # API client, auth, query client, utils
+│   ├── pages/                    # Route-level page components
+│   ├── stores/                   # Zustand stores (auth, instance, ui)
+│   └── types/                    # Shared TypeScript types / DTOs
+├── .env.local                    # Vite local env (gitignored)
+├── .env.example
+├── Dockerfile                    # Multi-stage Node → Nginx
+├── nginx.conf
+├── index.html
+├── package.json
+├── tailwind.config.js
+├── tsconfig.json                 # Strict, path alias `@/*` → `src/*`
+└── vite.config.ts
+```
+
+### When to Update This Map
+
+- Adding, removing, or renaming any top-level directory or file.
+- Creating a new domain package in `backend/internal/handlers/`, `services/`, or `repositories/`.
+- Adding a new component domain folder in `frontend/src/components/` or `hooks/`.
+- Changing the purpose of any existing folder.
+
+> **Rule:** If a new developer reading AGENTS.md would be misled by this map, update it before finishing your task.
+
 ## React Best Practices (ENFORCED)
 
 1. **Composition over Inheritance** — Always prefer component composition. No class components.
@@ -95,6 +203,41 @@ Create a new `.sql` migration file **before any code that depends on the new sch
 - **Migrations are immutable after merge.** If a merged migration is wrong, create a *new* migration that fixes it. Never edit a migration that has already been deployed.
 - **No raw SQL in handlers.** If you need a migration, write it in the migrations directory, not inline in a repository or handler.
 - **GORM models and migrations must stay in sync.** The GORM model tags are documentation and query-building metadata, not the schema source of truth. The `.sql` file is the source of truth.
+
+## Post-Work Build Evaluation (ENFORCED)
+
+After any work is completed — whether a bug fix, feature, refactor, or dependency change — evaluate whether the frontend, backend, or both need to be rebuilt.
+
+1. **Determine what changed:**
+   - Frontend code (React, TypeScript, CSS, HTML, assets, package.json in `/frontend` or equivalent) → rebuild frontend.
+   - Backend code (Go, migrations, configs in `/backend` or equivalent) → rebuild backend.
+   - Shared types, API contracts, or root-level config → rebuild both.
+2. **Run the appropriate build / deploy script(s):**
+   - **Frontend** — Verify the production build compiles successfully **without starting a server** (servers block indefinitely and hang the terminal):
+     - **Docker build only:** `docker build --no-cache -t tabletop-web frontend/` — verifies the full Vite → Nginx Docker build succeeds. Do **not** run `docker run` afterwards.
+     - **Native build (faster):** `cd frontend && npm run build` — verifies Vite production build succeeds without Docker. Do **not** run `npm run dev` afterwards.
+   - **Backend** — Build and deploy to Fly.io: `./backend.sh` (covers `fly deploy`, logs, secrets, and migrations).
+   - **Full local dev (backend + frontend):** `./dev.sh` — starts Docker infra (Postgres, Redis), native backend with Air hot-reload, and Vite dev server. Use this only for **interactive local development and smoke-testing** inside a dedicated terminal. Do **not** run this from the AI toolchain (it blocks indefinitely).
+3. **Verify the build succeeds before declaring the task complete.** A failing build or deploy is a blocking issue — fix it immediately. Do not skip verification because the change "seems small."
+
+## Debugging Network Traces (.har Files)
+
+When a user provides a `.har` file for debugging, **do not read the entire file into context**. These files are often tens of thousands of lines and will exhaust the context window.
+
+**Always** use a Python script to perform targeted JSON analysis:
+
+```python
+import json
+with open('localhost.har') as f:
+    data = json.load(f)
+entries = data['log']['entries']
+# Filter, summarize, or extract specific requests
+for e in entries:
+    req, resp = e['request'], e['response']
+    print(f"{req['method']} {req['url']} -> {resp['status']}")
+```
+
+This preserves context for code changes and produces precise, actionable findings.
 
 ## Data Decisions (Locked)
 
