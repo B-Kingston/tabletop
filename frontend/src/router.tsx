@@ -11,6 +11,10 @@ import { CookingView } from './pages/CookingView'
 import { WineList } from './pages/WineList'
 import { WineDetail } from './pages/WineDetail'
 import { WineEdit } from './pages/WineEdit'
+import { NightList } from './pages/NightList'
+import { NightDetail } from './pages/NightDetail'
+import { NightEdit } from './pages/NightEdit'
+import { SpinTheNight } from './pages/SpinTheNight'
 import { ChatPage } from './pages/ChatPage'
 
 const rootRoute = createRootRoute({ component: Outlet })
@@ -20,7 +24,6 @@ const dashboardRoute = createRoute({ getParentRoute: () => rootRoute, path: '/',
 
 const instanceLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
-  // id: 'instance',
   path: '/instances/$instanceId',
   component: InstanceLayout,
 })
@@ -35,6 +38,11 @@ const cookingViewRoute = createRoute({ getParentRoute: () => instanceLayoutRoute
 const wineListRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path: '/wines', component: WineList })
 const wineNewRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path: '/wines/new', component: WineEdit })
 const wineDetailRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path: '/wines/$wineId', component: WineDetail })
+const nightListRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path: '/nights', component: NightList })
+const nightNewRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path: '/nights/new', component: NightEdit })
+const spinRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path: '/nights/spin', component: SpinTheNight })
+const nightDetailRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path: '/nights/$nightId', component: NightDetail })
+const nightEditRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path: '/nights/$nightId/edit', component: NightEdit })
 const chatRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path: '/chat', component: ChatPage })
 
 const routeTree = rootRoute.addChildren([
@@ -51,6 +59,11 @@ const routeTree = rootRoute.addChildren([
     wineListRoute,
     wineNewRoute,
     wineDetailRoute,
+    nightListRoute,
+    nightNewRoute,
+    spinRoute,
+    nightDetailRoute,
+    nightEditRoute,
     chatRoute,
   ]),
 ])

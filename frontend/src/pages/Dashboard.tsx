@@ -113,13 +113,30 @@ function InstanceSection() {
       {isLoading && <GridSkeleton count={3} />}
 
       {instances && instances.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Users className="h-12 w-12 text-neutral-300 mb-4" />
-          <h3 className="text-lg font-medium text-neutral-900 mb-2">No groups yet</h3>
-          <p className="text-sm text-neutral-600 max-w-sm">
-            Create a new group or join an existing one to start tracking together.
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="flex flex-col items-center justify-center py-24 text-center"
+        >
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-neutral-100 text-neutral-400 mb-6">
+            <Users className="h-8 w-8" />
+          </div>
+          <h3 className="text-xl font-semibold text-neutral-900 mb-2">No groups yet</h3>
+          <p className="text-neutral-600 max-w-sm mb-8">
+            Create a group to start tracking media, wines, and recipes with friends.
           </p>
-        </div>
+          <div className="flex items-center gap-3">
+            <Button size="lg" onClick={() => setCreateOpen(true)}>
+              <Plus className="mr-2 h-5 w-5" />
+              Create Group
+            </Button>
+            <Button variant="secondary" size="lg" onClick={() => setJoinOpen(true)}>
+              <LogIn className="mr-2 h-5 w-5" />
+              Join Group
+            </Button>
+          </div>
+        </motion.div>
       )}
 
       {instances && instances.length > 0 && (
@@ -165,6 +182,11 @@ function CreateInstanceDialog({ open, onClose }: { open: boolean; onClose: () =>
   const createMutation = useCreateInstance()
   const navigate = useNavigate()
 
+  const errorMessage =
+    createMutation.error instanceof Error
+      ? (createMutation.error as any)?.response?.data?.error ?? createMutation.error.message
+      : null
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     createMutation.mutate(
@@ -188,6 +210,11 @@ function CreateInstanceDialog({ open, onClose }: { open: boolean; onClose: () =>
         </DialogHeader>
         <DialogBody>
           <div className="space-y-4">
+            {errorMessage && (
+              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                {errorMessage}
+              </div>
+            )}
             <div>
               <label htmlFor="create-name" className="block text-sm font-medium text-neutral-700 mb-1">
                 Name
@@ -209,8 +236,9 @@ function CreateInstanceDialog({ open, onClose }: { open: boolean; onClose: () =>
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Members will need this to join"
+                placeholder="Members will need this to join (min 4 characters)"
                 required
+                minLength={4}
               />
             </div>
           </div>
@@ -233,6 +261,11 @@ function JoinInstanceDialog({ open, onClose }: { open: boolean; onClose: () => v
   const [password, setPassword] = useState('')
   const joinMutation = useJoinInstance()
   const navigate = useNavigate()
+
+  const errorMessage =
+    joinMutation.error instanceof Error
+      ? (joinMutation.error as any)?.response?.data?.error ?? joinMutation.error.message
+      : null
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -257,6 +290,11 @@ function JoinInstanceDialog({ open, onClose }: { open: boolean; onClose: () => v
         </DialogHeader>
         <DialogBody>
           <div className="space-y-4">
+            {errorMessage && (
+              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                {errorMessage}
+              </div>
+            )}
             <div>
               <label htmlFor="join-id" className="block text-sm font-medium text-neutral-700 mb-1">
                 Group ID

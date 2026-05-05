@@ -34,7 +34,7 @@ export function WineDetail() {
       setCost(wine.cost?.toString() ?? '')
       setRating(wine.rating ?? 0)
       setNotes(wine.notes ?? '')
-      setConsumedAt(wine.consumedAt ?? '')
+      setConsumedAt(wine.consumedAt ? wine.consumedAt.split('T')[0] : '')
     }
   }, [wine])
 

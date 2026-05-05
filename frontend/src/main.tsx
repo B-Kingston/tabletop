@@ -1,9 +1,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { ClerkProvider, useAuth } from '@/lib/clerk'
+import { ClerkProvider } from '@/lib/clerk'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
 import { setAuthTokenGetter } from './lib/api'
+import { useAuth } from './hooks/useAuth'
 import { queryClient } from './lib/queryClient'
 import { router } from './router'
 import './index.css'
@@ -15,29 +16,25 @@ if (!clerkPubKey && !devSkipAuth) {
   throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY')
 }
 
-// Set dev token synchronously so the very first React Query request includes auth headers
+// Dev mode: set token synchronously before React mounts so first requests work
 if (devSkipAuth) {
   setAuthTokenGetter(async () => 'dev')
 }
 
-function AuthTokenSetup({ children }: { children: React.ReactNode }) {
-  const { getToken } = useAuth()
-  React.useEffect(() => {
-    if (!devSkipAuth) {
-      setAuthTokenGetter(getToken)
-    }
-  }, [getToken])
+function AuthSetup({ children }: { children: React.ReactNode }) {
+  // Triggers token getter registration + auto user sync via useEffect
+  useAuth()
   return <>{children}</>
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ClerkProvider publishableKey={clerkPubKey}>
-      <AuthTokenSetup>
-        <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <AuthSetup>
           <RouterProvider router={router} />
-        </QueryClientProvider>
-      </AuthTokenSetup>
+        </AuthSetup>
+      </QueryClientProvider>
     </ClerkProvider>
   </React.StrictMode>,
 )
