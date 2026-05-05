@@ -2,6 +2,8 @@
 
 Track media, wines, and recipes with the people you share them with.
 
+> **Note:** This project was built with AI assistance — from architecture and code generation to review and iteration. It's a deliberate experiment in treating AI as a co-developer rather than just a tool.
+
 ## Two Ways to Run Locally
 
 | Mode | Command | What's running | Use for |
