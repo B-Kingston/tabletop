@@ -30,9 +30,7 @@ func createTestWine(instanceID, userID uuid.UUID, overrides ...func(*models.Wine
 	wine := &models.Wine{
 		InstanceID:  instanceID,
 		Name:        "Test Wine",
-		Producer:    "Test Winery",
 		Type:        models.WineTypeRed,
-		Currency:    "AUD",
 		CreatedByID: userID,
 		UpdatedByID: userID,
 	}

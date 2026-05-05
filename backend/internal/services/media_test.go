@@ -112,7 +112,7 @@ func TestMediaService_Update(t *testing.T) {
 	require.NoError(t, err)
 
 	rating := float32(9.0)
-	updated, err := svc.Update(ctx, instanceID, item.ID, userID, "completed", &rating, "Amazing!")
+	updated, err := svc.Update(ctx, instanceID, item.ID, userID, "completed", &rating, "Amazing!", nil)
 	require.NoError(t, err)
 	assert.Equal(t, "completed", updated.Status)
 	assert.Equal(t, float32(9.0), *updated.Rating)
@@ -130,7 +130,7 @@ func TestMediaService_Update_PartialFields(t *testing.T) {
 	item, err := svc.Create(ctx, instanceID, userID, 550, "movie", "Fight Club", "", "", nil)
 	require.NoError(t, err)
 
-	updated, err := svc.Update(ctx, instanceID, item.ID, userID, "watching", nil, "")
+	updated, err := svc.Update(ctx, instanceID, item.ID, userID, "watching", nil, "", nil)
 	require.NoError(t, err)
 	assert.Equal(t, "watching", updated.Status)
 	assert.Nil(t, updated.Rating)
@@ -145,7 +145,7 @@ func TestMediaService_Update_NotFound(t *testing.T) {
 
 	_, _, instanceID, userID := setupMediaServiceTestDB(t)
 
-	_, err := svc.Update(ctx, instanceID, uuid.New(), userID, "completed", nil, "")
+	_, err := svc.Update(ctx, instanceID, uuid.New(), userID, "completed", nil, "", nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 }

@@ -39,12 +39,11 @@ func TestWineService_Create(t *testing.T) {
 
 	instanceID, userID := setupWineServiceTest(t)
 
-	wine, err := svc.Create(ctx, instanceID, userID, "Barolo", "Giacomo", "red", nil, nil, "", nil, "Great wine", nil)
+	wine, err := svc.Create(ctx, instanceID, userID, "Barolo", "red", nil, nil, "Great wine", nil)
 	require.NoError(t, err)
 	require.NotNil(t, wine)
 	assert.Equal(t, "Barolo", wine.Name)
 	assert.Equal(t, models.WineTypeRed, wine.Type)
-	assert.Equal(t, "AUD", wine.Currency)
 }
 
 func TestWineService_Create_DefaultCurrency(t *testing.T) {
@@ -55,9 +54,9 @@ func TestWineService_Create_DefaultCurrency(t *testing.T) {
 
 	instanceID, userID := setupWineServiceTest(t)
 
-	wine, err := svc.Create(ctx, instanceID, userID, "Sancerre", "Domaine", "white", nil, nil, "", nil, "", nil)
+	wine, err := svc.Create(ctx, instanceID, userID, "Sancerre", "white", nil, nil, "", nil)
 	require.NoError(t, err)
-	assert.Equal(t, "AUD", wine.Currency)
+	assert.NotNil(t, wine)
 }
 
 func TestWineService_Create_WithOptionalFields(t *testing.T) {
@@ -68,16 +67,13 @@ func TestWineService_Create_WithOptionalFields(t *testing.T) {
 
 	instanceID, userID := setupWineServiceTest(t)
 
-	vintage := 2018
 	cost := 45.50
 	rating := float32(4.5)
 	consumedAt := time.Now()
 
-	wine, err := svc.Create(ctx, instanceID, userID, "Chianti", "Producer", "red", &vintage, &cost, "EUR", &rating, "Excellent", &consumedAt)
+	wine, err := svc.Create(ctx, instanceID, userID, "Chianti", "red", &cost, &rating, "Excellent", &consumedAt)
 	require.NoError(t, err)
-	assert.Equal(t, 2018, *wine.Vintage)
 	assert.Equal(t, 45.50, *wine.Cost)
-	assert.Equal(t, "EUR", wine.Currency)
 	assert.Equal(t, float32(4.5), *wine.Rating)
 }
 
@@ -89,7 +85,7 @@ func TestWineService_GetByID(t *testing.T) {
 
 	instanceID, userID := setupWineServiceTest(t)
 
-	wine, err := svc.Create(ctx, instanceID, userID, "Barolo", "Giacomo", "red", nil, nil, "", nil, "", nil)
+	wine, err := svc.Create(ctx, instanceID, userID, "Barolo", "red", nil, nil, "", nil)
 	require.NoError(t, err)
 
 	found, err := svc.GetByID(ctx, instanceID, wine.ID)
@@ -118,9 +114,9 @@ func TestWineService_List(t *testing.T) {
 
 	instanceID, userID := setupWineServiceTest(t)
 
-	_, err := svc.Create(ctx, instanceID, userID, "Red 1", "P1", "red", nil, nil, "", nil, "", nil)
+	_, err := svc.Create(ctx, instanceID, userID, "Red 1", "red", nil, nil, "", nil)
 	require.NoError(t, err)
-	_, err = svc.Create(ctx, instanceID, userID, "White 1", "P2", "white", nil, nil, "", nil, "", nil)
+	_, err = svc.Create(ctx, instanceID, userID, "White 1", "white", nil, nil, "", nil)
 	require.NoError(t, err)
 
 	all, err := svc.List(ctx, instanceID, "")
@@ -141,12 +137,12 @@ func TestWineService_Update(t *testing.T) {
 
 	instanceID, userID := setupWineServiceTest(t)
 
-	wine, err := svc.Create(ctx, instanceID, userID, "Barolo", "Giacomo", "red", nil, nil, "", nil, "", nil)
+	wine, err := svc.Create(ctx, instanceID, userID, "Barolo", "red", nil, nil, "", nil)
 	require.NoError(t, err)
 
 	newName := "Updated Barolo"
 	rating := float32(4.8)
-	updated, err := svc.Update(ctx, instanceID, wine.ID, userID, &newName, nil, nil, nil, nil, nil, &rating, nil, nil)
+	updated, err := svc.Update(ctx, instanceID, wine.ID, userID, &newName, nil, nil, &rating, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, "Updated Barolo", updated.Name)
 	assert.Equal(t, float32(4.8), *updated.Rating)
@@ -159,7 +155,7 @@ func TestWineService_Update_NotFound(t *testing.T) {
 
 	_, _ = setupWineServiceTest(t)
 
-	_, err := svc.Update(context.Background(), uuid.New(), uuid.New(), uuid.New(), nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	_, err := svc.Update(context.Background(), uuid.New(), uuid.New(), uuid.New(), nil, nil, nil, nil, nil, nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 }
@@ -172,7 +168,7 @@ func TestWineService_Delete(t *testing.T) {
 
 	instanceID, userID := setupWineServiceTest(t)
 
-	wine, err := svc.Create(ctx, instanceID, userID, "ToDelete", "P", "red", nil, nil, "", nil, "", nil)
+	wine, err := svc.Create(ctx, instanceID, userID, "ToDelete", "red", nil, nil, "", nil)
 	require.NoError(t, err)
 
 	err = svc.Delete(ctx, instanceID, wine.ID)

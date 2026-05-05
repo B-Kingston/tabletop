@@ -1,9 +1,12 @@
 package instances
 
 import (
+	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"tabletop/backend/internal/middleware"
@@ -50,11 +53,46 @@ type CreateRequest struct {
 	Password string `json:"password" binding:"required,min=4,max=100"`
 }
 
+// formatValidationError translates gin validation errors into user-friendly messages
+func formatValidationError(err error) string {
+	var verrs validator.ValidationErrors
+	if errors.As(err, &verrs) {
+		var msgs []string
+		for _, fe := range verrs {
+			switch fe.Field() {
+			case "Name":
+				switch fe.Tag() {
+				case "required":
+					msgs = append(msgs, "Group name is required")
+				case "min":
+					msgs = append(msgs, "Group name is too short")
+				case "max":
+					msgs = append(msgs, "Group name is too long (max 100 characters)")
+				}
+			case "Password":
+				switch fe.Tag() {
+				case "required":
+					msgs = append(msgs, "Password is required")
+				case "min":
+					msgs = append(msgs, "Password must be at least 4 characters")
+				case "max":
+					msgs = append(msgs, "Password must be at most 100 characters")
+				}
+			}
+		}
+		if len(msgs) == 0 {
+			return "Invalid input"
+		}
+		return strings.Join(msgs, "; ")
+	}
+	return err.Error()
+}
+
 // Create handles instance creation
 func (h *Handler) Create(c *gin.Context) {
 	var req CreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": formatValidationError(err)})
 		return
 	}
 

@@ -17,6 +17,7 @@ import (
 	"tabletop/backend/internal/handlers/chat"
 	"tabletop/backend/internal/handlers/instances"
 	mediahandler "tabletop/backend/internal/handlers/media"
+	nightshandler "tabletop/backend/internal/handlers/nights"
 	recipehandler "tabletop/backend/internal/handlers/recipes"
 	"tabletop/backend/internal/handlers/tmdb"
 	winehandler "tabletop/backend/internal/handlers/wines"
@@ -84,6 +85,9 @@ func main() {
 	recipeService := services.NewRecipeService(recipeRepo)
 	wineService := services.NewWineService(wineRepo)
 
+	nightRepo := repositories.NewNightRepository(db.DB)
+	nightService := services.NewNightService(nightRepo, wineRepo, recipeRepo, mediaRepo)
+
 	var openaiRateLimiter services.RateLimiter
 	if redisClient != nil {
 		openaiRateLimiter = redisClient.Client
@@ -97,6 +101,7 @@ func main() {
 	mediaHandler := mediahandler.NewHandler(mediaService)
 	recipeHandler := recipehandler.NewHandler(recipeService, db.DB)
 	wineHandler := winehandler.NewHandler(wineService, db.DB)
+	nightHandler := nightshandler.NewHandler(nightService, db.DB)
 	chatHandler := chat.NewHandler(chatService)
 	tmdbHandler := tmdb.NewHandler(tmdbService)
 	aiHandler := ai.NewHandler(openaiService)
@@ -151,6 +156,7 @@ func main() {
 		mediaHandler.RegisterRoutes(instance)
 		recipeHandler.RegisterRoutes(instance)
 		wineHandler.RegisterRoutes(instance)
+		nightHandler.RegisterRoutes(instance)
 		chatHandler.RegisterRoutes(instance)
 		tmdbHandler.RegisterRoutes(instance)
 		aiHandler.RegisterRoutes(instance)
