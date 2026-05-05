@@ -449,12 +449,95 @@ export const aiHandlers = [
   }),
 ]
 
+export const nightHandlers = [
+  http.get(`${BASE}/instances/:instanceId/nights`, () => {
+    return HttpResponse.json({
+      data: [
+        {
+          id: 'night-1',
+          instanceId: 'inst-1',
+          name: 'Barolo & Bolognese Night',
+          wineId: 'wine-1',
+          recipeId: 'recipe-1',
+          mediaId: null,
+          createdById: 'user-1',
+          updatedById: 'user-1',
+          createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-01-01T00:00:00Z',
+          wine: { id: 'wine-1', name: 'Barolo', type: 'red' },
+          recipe: { id: 'recipe-1', title: 'Bolognese' },
+        },
+      ],
+      error: null,
+    })
+  }),
+  http.get(`${BASE}/instances/:instanceId/nights/:nightId`, ({ params }) => {
+    return HttpResponse.json({
+      data: {
+        id: params.nightId,
+        instanceId: 'inst-1',
+        name: 'Barolo & Bolognese Night',
+        wineId: 'wine-1',
+        recipeId: 'recipe-1',
+        mediaId: null,
+        createdById: 'user-1',
+        updatedById: 'user-1',
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z',
+        wine: { id: 'wine-1', name: 'Barolo', type: 'red' },
+        recipe: { id: 'recipe-1', title: 'Bolognese' },
+      },
+      error: null,
+    })
+  }),
+  http.post(`${BASE}/instances/:instanceId/nights`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    return HttpResponse.json({
+      data: {
+        id: 'night-new',
+        instanceId: 'inst-1',
+        name: body.name ?? 'New Night',
+        wineId: (body.wineId as string) ?? null,
+        recipeId: (body.recipeId as string) ?? null,
+        mediaId: (body.mediaId as string) ?? null,
+        createdById: 'user-1',
+        updatedById: 'user-1',
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z',
+      },
+      error: null,
+    }, { status: 201 })
+  }),
+  http.patch(`${BASE}/instances/:instanceId/nights/:nightId`, async ({ request }) => {
+    const body = await request.json() as Record<string, unknown>
+    return HttpResponse.json({
+      data: {
+        id: 'night-1',
+        instanceId: 'inst-1',
+        name: (body.name as string) ?? 'Barolo & Bolognese Night',
+        wineId: body.clearWine ? null : ((body.wineId as string) ?? 'wine-1'),
+        recipeId: body.clearRecipe ? null : ((body.recipeId as string) ?? 'recipe-1'),
+        mediaId: body.clearMedia ? null : ((body.mediaId as string) ?? null),
+        createdById: 'user-1',
+        updatedById: 'user-1',
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z',
+      },
+      error: null,
+    })
+  }),
+  http.delete(`${BASE}/instances/:instanceId/nights/:nightId`, () => {
+    return HttpResponse.json({ data: null, error: null })
+  }),
+]
+
 export const allHandlers = [
   ...authHandlers,
   ...instanceHandlers,
   ...mediaHandlers,
   ...recipeHandlers,
   ...wineHandlers,
+  ...nightHandlers,
   ...chatHandlers,
   ...tmdbHandlers,
   ...aiHandlers,

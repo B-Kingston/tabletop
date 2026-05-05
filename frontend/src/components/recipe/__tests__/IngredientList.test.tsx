@@ -9,6 +9,7 @@ const makeIngredient = (overrides: Partial<Ingredient> = {}): Ingredient => ({
   name: 'Flour',
   quantity: '2',
   unit: 'cups',
+  cost: null,
   optional: false,
   ...overrides,
 })
