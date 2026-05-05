@@ -11,6 +11,7 @@ export interface User {
 export interface Instance {
   id: string
   name: string
+  description: string
   ownerId: string
   isPublic: boolean
   createdAt: string
@@ -67,6 +68,7 @@ export interface Ingredient {
   name: string
   quantity: string
   unit: string
+  cost: number | null
   optional: boolean
 }
 
@@ -117,6 +119,23 @@ export interface ChatMessage {
   role: 'user' | 'assistant' | 'system'
   content: string
   createdAt: string
+}
+
+export interface Night {
+  id: string
+  instanceId: string
+  name: string
+  wineId: string | null
+  recipeId: string | null
+  mediaId: string | null
+  createdById: string
+  updatedById: string
+  createdAt: string
+  updatedAt: string
+  wine?: Wine | null
+  recipe?: Recipe | null
+  media?: MediaItem | null
+  createdBy?: User
 }
 
 export interface TMDBSearchResult {

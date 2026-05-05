@@ -2,6 +2,7 @@ import React from 'react'
 import {
   ClerkProvider as RealClerkProvider,
   useAuth as useRealAuth,
+  useUser as useRealUser,
   SignedIn as RealSignedIn,
   SignedOut as RealSignedOut,
   SignInButton as RealSignInButton,
@@ -32,6 +33,21 @@ function useDevAuth() {
       window.location.reload()
     },
     getToken: async () => 'dev',
+  }
+}
+
+function useDevUser() {
+  return {
+    isLoaded: true,
+    isSignedIn: true,
+    user: {
+      id: 'dev-user',
+      primaryEmailAddress: { emailAddress: 'dev@localhost' } as any,
+      firstName: 'Dev',
+      lastName: 'User',
+      fullName: 'Dev User',
+      imageUrl: '',
+    } as any,
   }
 }
 
@@ -67,6 +83,10 @@ export const ClerkProvider: typeof RealClerkProvider = DEV_SKIP_AUTH
 export const useAuth: typeof useRealAuth = DEV_SKIP_AUTH
   ? (useDevAuth as any)
   : useRealAuth
+
+export const useUser: typeof useRealUser = DEV_SKIP_AUTH
+  ? (useDevUser as any)
+  : useRealUser
 
 export const SignedIn: typeof RealSignedIn = DEV_SKIP_AUTH
   ? (DevSignedIn as any)
