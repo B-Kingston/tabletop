@@ -36,7 +36,12 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
         className="flex-1 resize-none rounded-lg border-0 py-2.5 px-3 text-neutral-900 shadow-sm ring-1 ring-inset ring-neutral-200 placeholder:text-neutral-400 focus:ring-2 focus:ring-inset focus:ring-neutral-900 sm:text-sm disabled:opacity-50"
         aria-label="Chat message input"
       />
-      <Button size="sm" onClick={handleSubmit} disabled={disabled || !value.trim()}>
+      <Button
+        size="sm"
+        onClick={handleSubmit}
+        disabled={disabled || !value.trim()}
+        aria-label="Send message"
+      >
         <Send className="h-4 w-4" />
       </Button>
     </div>

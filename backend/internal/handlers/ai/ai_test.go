@@ -53,7 +53,7 @@ func setupAIHandlerTest(t *testing.T) (*gin.Engine, *Handler, uuid.UUID) {
 	}))
 
 	mockLimiter := &testRateLimiter{incrVal: 1, expireVal: true}
-	openaiSvc := services.NewOpenAIService("test-key", mockLimiter, 20)
+	openaiSvc := services.NewOpenAIService("test-key", mockLimiter, 20, false)
 	openaiSvc.SetBaseURL(server.URL)
 
 	handler := NewHandler(openaiSvc)
@@ -146,6 +146,43 @@ func TestHandler_Chat_InvalidBody(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestHandler_Chat_RateLimitExceeded(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	defer server.Close()
+
+	mockLimiter := &testRateLimiter{incrVal: 999, expireVal: true}
+	openaiSvc := services.NewOpenAIService("test-key", mockLimiter, 20, false)
+	openaiSvc.SetBaseURL(server.URL)
+
+	handler := NewHandler(openaiSvc)
+	userID := uuid.New()
+
+	r := gin.New()
+	r.POST("/ai/chat", func(c *gin.Context) {
+		c.Set("internal_user_id", userID)
+		handler.Chat(c)
+	})
+
+	body := chatRequest{
+		Messages: []struct {
+			Role    string `json:"role" binding:"required"`
+			Content string `json:"content" binding:"required"`
+		}{
+			{Role: "user", Content: "Hello"},
+		},
+	}
+	jsonBody, _ := json.Marshal(body)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/ai/chat", bytes.NewReader(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusTooManyRequests, w.Code)
 }
 
 func TestHandler_ChatStream(t *testing.T) {

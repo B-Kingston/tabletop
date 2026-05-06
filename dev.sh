@@ -1,11 +1,28 @@
 #!/bin/bash
 
 # Run Tabletop in local dev mode (native backend + frontend, Docker infra)
-# Usage: ./dev.sh [env-file]
-# Default env-file: .env.dev
+# Usage:
+#   ./dev.sh                     Mock auth (default, no real keys needed)
+#   ./dev.sh [env-file]          Use a different env file
+#   ./dev.sh --with-auth          Real Clerk + TMDB + OpenAI auth
+#   ./dev.sh [env-file] --with-auth   Custom env file + real auth
 
 
-ENV_FILE="${1:-.env.dev}"
+ENV_FILE=".env.dev"
+WITH_AUTH=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --with-auth)
+      WITH_AUTH=true
+      shift
+      ;;
+    *)
+      ENV_FILE="$1"
+      shift
+      ;;
+  esac
+done
 
 # Colors
 GREEN='\033[0;32m'
@@ -30,6 +47,60 @@ echo -e "${YELLOW}🚀  Starting Tabletop dev environment with $ENV_FILE...${NC}
 set -a
 source "$ENV_FILE"
 set +a
+
+# ---- Real auth validation ----
+if $WITH_AUTH; then
+  echo ""
+  echo -e "${YELLOW}🔐  Starting with REAL Clerk authentication.${NC}"
+  echo -e "${YELLOW}    Ensure your $ENV_FILE has real keys (not dev dummy values).${NC}"
+  echo -e "${YELLOW}    See .env.dev.example → [REAL KEYS MODE] section for setup.${NC}"
+  echo ""
+
+  # Force DEV_SKIP_AUTH off (export so Go backend sees it)
+  export DEV_SKIP_AUTH=false
+
+  # Validate required real keys
+  MISSING=()
+
+  if [ -z "$CLERK_SECRET_KEY" ] || [ "$CLERK_SECRET_KEY" = "sk_test_dev" ]; then
+    MISSING+=("CLERK_SECRET_KEY (should be sk_test_... from Clerk Dashboard → API Keys)")
+  fi
+  if [ -z "$CLERK_JWKS_URL" ] || [ "$CLERK_JWKS_URL" = "https://clerk.local/.well-known/jwks.json" ]; then
+    MISSING+=("CLERK_JWKS_URL (should be https://<your-domain>.clerk.accounts.dev/.well-known/jwks.json)")
+  fi
+  if [ -z "$CLERK_ISSUER" ]; then
+    MISSING+=("CLERK_ISSUER (should be https://<your-domain>.clerk.accounts.dev)")
+  fi
+  if [ -z "$CLERK_AUDIENCE" ]; then
+    MISSING+=("CLERK_AUDIENCE (should be e.g. 'tabletop')")
+  fi
+  if [ -z "$CLERK_PUBLISHABLE_KEY" ] || [ "$CLERK_PUBLISHABLE_KEY" = "pk_test_dev" ]; then
+    MISSING+=("CLERK_PUBLISHABLE_KEY (should be pk_test_... from Clerk Dashboard → API Keys)")
+  fi
+  if [ -z "$TMDB_API_KEY" ] || [ "$TMDB_API_KEY" = "dev" ]; then
+    MISSING+=("TMDB_API_KEY (should be from https://www.themoviedb.org/settings/api)")
+  fi
+
+  if [ ${#MISSING[@]} -gt 0 ]; then
+    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${RED}❌  Real keys are MISSING or still set to dev defaults:${NC}"
+    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    for m in "${MISSING[@]}"; do
+      echo -e "${RED}    ✗  $m${NC}"
+    done
+    echo ""
+    echo -e "${YELLOW}    To fix: edit $ENV_FILE and replace the dummy values${NC}"
+    echo -e "${YELLOW}    with your real keys.  See .env.dev.example for details.${NC}"
+    echo ""
+    echo -e "${YELLOW}    Or run without --with-auth to use mock auth:${NC}"
+    echo -e "${YELLOW}      ./dev.sh${NC}"
+    echo ""
+    exit 1
+  fi
+
+  echo -e "${GREEN}✅  All real keys verified${NC}"
+  echo ""
+fi
 
 # Start infrastructure (Postgres + Redis)
 echo -e "${YELLOW}🐳  Starting Docker services (db, redis)...${NC}"

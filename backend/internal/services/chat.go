@@ -2,12 +2,17 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
 	"tabletop/backend/internal/models"
 	"tabletop/backend/internal/repositories"
 )
+
+// ErrSessionNotFound is returned when a chat session does not exist or does not
+// belong to the caller's instance.
+var ErrSessionNotFound = errors.New("chat session not found")
 
 type ChatService struct {
 	sessionRepo  repositories.ChatSessionRepository
@@ -47,7 +52,23 @@ func (s *ChatService) ListSessions(ctx context.Context, instanceID uuid.UUID) ([
 	return s.sessionRepo.ListByInstance(ctx, instanceID)
 }
 
-func (s *ChatService) SendMessage(ctx context.Context, instanceID, sessionID uuid.UUID, role, content string) (*models.ChatMessage, error) {
+func (s *ChatService) SendMessage(ctx context.Context, instanceID, sessionID, userID uuid.UUID, role, content string) (*models.ChatMessage, error) {
+	// Verify session belongs to this instance before any writes or OpenAI calls
+	session, err := s.sessionRepo.GetByID(ctx, instanceID, sessionID)
+	if err != nil {
+		return nil, fmt.Errorf("verify session: %w", err)
+	}
+	if session == nil {
+		return nil, ErrSessionNotFound
+	}
+
+	// Check rate limit before calling OpenAI
+	if s.openaiClient != nil {
+		if err := s.openaiClient.CheckRateLimit(ctx, userID); err != nil {
+			return nil, fmt.Errorf("rate limit: %w", err)
+		}
+	}
+
 	userMsg := &models.ChatMessage{
 		SessionID: sessionID,
 		Role:      role,
@@ -57,7 +78,7 @@ func (s *ChatService) SendMessage(ctx context.Context, instanceID, sessionID uui
 		return nil, err
 	}
 
-	history, err := s.messageRepo.ListBySession(ctx, sessionID)
+	history, err := s.messageRepo.ListBySession(ctx, instanceID, sessionID)
 	if err != nil {
 		return nil, err
 	}
@@ -90,10 +111,30 @@ func (s *ChatService) SendMessage(ctx context.Context, instanceID, sessionID uui
 }
 
 func (s *ChatService) DeleteSession(ctx context.Context, instanceID, id uuid.UUID) error {
+	// Verify session belongs to this instance before deletion
+	session, err := s.sessionRepo.GetByID(ctx, instanceID, id)
+	if err != nil {
+		return fmt.Errorf("verify session: %w", err)
+	}
+	if session == nil {
+		return ErrSessionNotFound
+	}
+
+	// Delete messages scoped by instance
+	if err := s.messageRepo.DeleteBySession(ctx, instanceID, id); err != nil {
+		return err
+	}
 	return s.sessionRepo.Delete(ctx, instanceID, id)
 }
 
-func (s *ChatService) GenerateRecipe(ctx context.Context, instanceID uuid.UUID, prompt string) (*OpenAIResponse, error) {
+func (s *ChatService) GenerateRecipe(ctx context.Context, instanceID, userID uuid.UUID, prompt string) (*OpenAIResponse, error) {
+	// Check rate limit before calling OpenAI
+	if s.openaiClient != nil {
+		if err := s.openaiClient.CheckRateLimit(ctx, userID); err != nil {
+			return nil, fmt.Errorf("rate limit: %w", err)
+		}
+	}
+
 	messages := []OpenAIMessage{
 		{Role: "system", Content: RecipeSystemPrompt},
 		{Role: "user", Content: prompt},

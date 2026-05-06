@@ -17,8 +17,11 @@ import (
 )
 
 type AuthConfig struct {
-	ClerkJWKSURL string
-	DevSkipAuth  bool
+	ClerkJWKSURL    string
+	DevSkipAuth     bool
+	Issuer          string
+	Audience        string
+	AllowQueryToken bool
 }
 
 const UserContextKey = "user"
@@ -83,6 +86,38 @@ func (p *jwksKeyProvider) keyFunc(token *jwt.Token) (interface{}, error) {
 	return nil, fmt.Errorf("unable to find key for kid: %s", kid)
 }
 
+func validateTokenClaims(claims jwt.MapClaims, cfg *AuthConfig, now time.Time) error {
+	exp, err := claims.GetExpirationTime()
+	if err != nil || exp == nil {
+		return fmt.Errorf("token missing expiration")
+	}
+	if now.After(exp.Time) {
+		return fmt.Errorf("token expired")
+	}
+
+	if cfg.Issuer != "" {
+		issuer, err := claims.GetIssuer()
+		if err != nil || issuer != cfg.Issuer {
+			return fmt.Errorf("invalid token issuer")
+		}
+	}
+
+	if cfg.Audience != "" {
+		audience, err := claims.GetAudience()
+		if err != nil {
+			return fmt.Errorf("invalid token audience")
+		}
+		for _, aud := range audience {
+			if aud == cfg.Audience {
+				return nil
+			}
+		}
+		return fmt.Errorf("invalid token audience")
+	}
+
+	return nil
+}
+
 func RequireAuth(cfg *AuthConfig) gin.HandlerFunc {
 	var provider *jwksKeyProvider
 	if cfg.ClerkJWKSURL != "" && !cfg.DevSkipAuth {
@@ -95,6 +130,11 @@ func RequireAuth(cfg *AuthConfig) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" && cfg.AllowQueryToken {
+			if token := c.Query("token"); token != "" {
+				authHeader = "Bearer " + token
+			}
+		}
 		if authHeader == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing authorization header"})
 			return
@@ -135,11 +175,9 @@ func RequireAuth(cfg *AuthConfig) gin.HandlerFunc {
 			return
 		}
 
-		if exp, ok := claims["exp"].(float64); ok {
-			if time.Now().Unix() > int64(exp) {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token expired"})
-				return
-			}
+		if err := validateTokenClaims(claims, cfg, time.Now()); err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
 		}
 
 		clerkID, _ := claims["sub"].(string)

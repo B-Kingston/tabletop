@@ -36,7 +36,6 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 
 	// Routes that require instance membership
 	instance := r.Group("/instances/:instance_id")
-	instance.Use(middleware.RequireAuth(&middleware.AuthConfig{}))
 	instance.Use(middleware.RequireInstanceMembership(h.db))
 	{
 		instance.GET("", h.Get)

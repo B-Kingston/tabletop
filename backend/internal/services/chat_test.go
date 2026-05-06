@@ -101,6 +101,38 @@ func TestChatService_ListSessions(t *testing.T) {
 	assert.Len(t, sessions, 2)
 }
 
+func TestChatService_DeleteSession_WithMessages(t *testing.T) {
+	db := setupServiceTestDB(t)
+	require.NoError(t, db.AutoMigrate(&models.ChatSession{}, &models.ChatMessage{}))
+	sessionRepo := repositories.NewChatSessionRepository(db)
+	msgRepo := repositories.NewChatMessageRepository(db)
+	svc := NewChatService(sessionRepo, msgRepo, nil)
+	ctx := context.Background()
+
+	_, instanceID, userID := setupChatServiceTest(t)
+
+	session, err := svc.CreateSession(ctx, instanceID, userID, "WithMessages")
+	require.NoError(t, err)
+
+	// Add a message to the session
+	msg := &models.ChatMessage{SessionID: session.ID, Role: "user", Content: "Hello"}
+	require.NoError(t, msgRepo.Create(ctx, msg))
+
+	// Delete should cascade and succeed
+	err = svc.DeleteSession(ctx, instanceID, session.ID)
+	require.NoError(t, err)
+
+	// Verify session is gone
+	found, err := svc.GetSession(ctx, instanceID, session.ID)
+	require.NoError(t, err)
+	assert.Nil(t, found)
+
+	// Verify messages are also gone
+	msgs, err := msgRepo.ListBySession(ctx, instanceID, session.ID)
+	require.NoError(t, err)
+	assert.Empty(t, msgs)
+}
+
 func TestChatService_DeleteSession(t *testing.T) {
 	db := setupServiceTestDB(t)
 	require.NoError(t, db.AutoMigrate(&models.ChatSession{}, &models.ChatMessage{}))
@@ -120,4 +152,47 @@ func TestChatService_DeleteSession(t *testing.T) {
 	found, err := svc.GetSession(ctx, instanceID, session.ID)
 	require.NoError(t, err)
 	assert.Nil(t, found)
+}
+
+func TestChatService_DeleteSession_WrongInstance(t *testing.T) {
+	db := setupServiceTestDB(t)
+	require.NoError(t, db.AutoMigrate(&models.ChatSession{}, &models.ChatMessage{}))
+	sessionRepo := repositories.NewChatSessionRepository(db)
+	msgRepo := repositories.NewChatMessageRepository(db)
+	svc := NewChatService(sessionRepo, msgRepo, nil)
+	ctx := context.Background()
+
+	_, instanceID, userID := setupChatServiceTest(t)
+
+	session, err := svc.CreateSession(ctx, instanceID, userID, "MySession")
+	require.NoError(t, err)
+
+	// Try to delete using a different instance ID
+	err = svc.DeleteSession(ctx, uuid.New(), session.ID)
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrSessionNotFound)
+
+	// Verify session still exists for the correct instance
+	found, err := svc.GetSession(ctx, instanceID, session.ID)
+	require.NoError(t, err)
+	assert.NotNil(t, found)
+}
+
+func TestChatService_SendMessage_CrossInstance(t *testing.T) {
+	db := setupServiceTestDB(t)
+	require.NoError(t, db.AutoMigrate(&models.ChatSession{}, &models.ChatMessage{}))
+	sessionRepo := repositories.NewChatSessionRepository(db)
+	msgRepo := repositories.NewChatMessageRepository(db)
+	svc := NewChatService(sessionRepo, msgRepo, nil)
+	ctx := context.Background()
+
+	_, instanceID, userID := setupChatServiceTest(t)
+
+	session, err := svc.CreateSession(ctx, instanceID, userID, "A")
+	require.NoError(t, err)
+
+	// Try to send a message to a session from a different instance
+	_, err = svc.SendMessage(ctx, uuid.New(), session.ID, userID, "user", "hello")
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrSessionNotFound)
 }

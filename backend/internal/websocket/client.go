@@ -56,14 +56,15 @@ func (c *Client) ReadPump() {
 		return nil
 	})
 	for {
-		_, message, err := c.conn.ReadMessage()
+		_, _, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				slog.Error("websocket read error", "error", err)
 			}
 			break
 		}
-		c.hub.Broadcast(c.instanceID, message)
+		// Client-originated data frames are intentionally ignored.
+		// REST endpoints are the only trust boundary for persisting and broadcasting messages.
 	}
 }
 

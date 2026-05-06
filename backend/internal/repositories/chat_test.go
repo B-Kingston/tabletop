@@ -134,6 +134,40 @@ func TestChatSessionRepository_ListByInstance(t *testing.T) {
 	assert.Len(t, sessions, 2)
 }
 
+func TestChatSessionRepository_Delete_WithMessages(t *testing.T) {
+	db, instanceID, userID := seedChatTestDB(t)
+	sessionRepo := NewChatSessionRepository(db)
+	msgRepo := NewChatMessageRepository(db)
+	ctx := context.Background()
+
+	session := &models.ChatSession{
+		InstanceID: instanceID,
+		UserID:     userID,
+		Title:      "WithMessages",
+	}
+	require.NoError(t, sessionRepo.Create(ctx, session))
+
+	msg := &models.ChatMessage{SessionID: session.ID, Role: "user", Content: "Hello"}
+	require.NoError(t, msgRepo.Create(ctx, msg))
+
+	// Delete messages first (as the service does), then delete session
+	err := msgRepo.DeleteBySession(ctx, instanceID, session.ID)
+	require.NoError(t, err)
+
+	// Verify messages are gone
+	remaining, err := msgRepo.ListBySession(ctx, instanceID, session.ID)
+	require.NoError(t, err)
+	assert.Empty(t, remaining)
+
+	// Now session delete should succeed
+	err = sessionRepo.Delete(ctx, instanceID, session.ID)
+	require.NoError(t, err)
+
+	found, err := sessionRepo.GetByID(ctx, instanceID, session.ID)
+	require.NoError(t, err)
+	assert.Nil(t, found)
+}
+
 func TestChatSessionRepository_Delete(t *testing.T) {
 	db, instanceID, userID := seedChatTestDB(t)
 	repo := NewChatSessionRepository(db)
@@ -191,19 +225,88 @@ func TestChatMessageRepository_ListBySession(t *testing.T) {
 		require.NoError(t, msgRepo.Create(ctx, &m))
 	}
 
-	results, err := msgRepo.ListBySession(ctx, session.ID)
+	results, err := msgRepo.ListBySession(ctx, instanceID, session.ID)
 	require.NoError(t, err)
 	assert.Len(t, results, 3)
 	assert.Equal(t, "First", results[0].Content)
 	assert.Equal(t, "Third", results[2].Content)
 }
 
-func TestChatMessageRepository_ListBySession_Empty(t *testing.T) {
-	db, _, _ := seedChatTestDB(t)
+func TestChatMessageRepository_DeleteBySession(t *testing.T) {
+	db, instanceID, userID := seedChatTestDB(t)
+	sessionRepo := NewChatSessionRepository(db)
 	msgRepo := NewChatMessageRepository(db)
 	ctx := context.Background()
 
-	results, err := msgRepo.ListBySession(ctx, uuid.New())
+	session := &models.ChatSession{InstanceID: instanceID, UserID: userID, Title: "Chat"}
+	require.NoError(t, sessionRepo.Create(ctx, session))
+
+	for _, content := range []string{"A", "B", "C"} {
+		require.NoError(t, msgRepo.Create(ctx, &models.ChatMessage{SessionID: session.ID, Role: "user", Content: content}))
+	}
+
+	// Verify 3 messages exist
+	msgs, err := msgRepo.ListBySession(ctx, instanceID, session.ID)
+	require.NoError(t, err)
+	assert.Len(t, msgs, 3)
+
+	// Delete them
+	err = msgRepo.DeleteBySession(ctx, instanceID, session.ID)
+	require.NoError(t, err)
+
+	// Verify empty
+	msgs, err = msgRepo.ListBySession(ctx, instanceID, session.ID)
+	require.NoError(t, err)
+	assert.Empty(t, msgs)
+}
+
+func TestChatMessageRepository_ListBySession_Empty(t *testing.T) {
+	db, instanceID, _ := seedChatTestDB(t)
+	msgRepo := NewChatMessageRepository(db)
+	ctx := context.Background()
+
+	results, err := msgRepo.ListBySession(ctx, instanceID, uuid.New())
 	require.NoError(t, err)
 	assert.Empty(t, results)
+}
+
+func TestChatMessageRepository_ListBySession_WrongInstance(t *testing.T) {
+	db, instanceID, userID := seedChatTestDB(t)
+	sessionRepo := NewChatSessionRepository(db)
+	msgRepo := NewChatMessageRepository(db)
+	ctx := context.Background()
+
+	session := &models.ChatSession{InstanceID: instanceID, UserID: userID, Title: "Chat"}
+	require.NoError(t, sessionRepo.Create(ctx, session))
+
+	msg := &models.ChatMessage{SessionID: session.ID, Role: "user", Content: "Secret"}
+	require.NoError(t, msgRepo.Create(ctx, msg))
+
+	// Try to list messages using a different instance ID
+	results, err := msgRepo.ListBySession(ctx, uuid.New(), session.ID)
+	require.NoError(t, err)
+	assert.Empty(t, results)
+}
+
+func TestChatMessageRepository_DeleteBySession_WrongInstance(t *testing.T) {
+	db, instanceID, userID := seedChatTestDB(t)
+	sessionRepo := NewChatSessionRepository(db)
+	msgRepo := NewChatMessageRepository(db)
+	ctx := context.Background()
+
+	session := &models.ChatSession{InstanceID: instanceID, UserID: userID, Title: "Chat"}
+	require.NoError(t, sessionRepo.Create(ctx, session))
+
+	msg := &models.ChatMessage{SessionID: session.ID, Role: "user", Content: "Secret"}
+	require.NoError(t, msgRepo.Create(ctx, msg))
+
+	// Try to delete messages using a different instance ID
+	err := msgRepo.DeleteBySession(ctx, uuid.New(), session.ID)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "session not found")
+
+	// Verify messages still exist for the correct instance
+	results, err := msgRepo.ListBySession(ctx, instanceID, session.ID)
+	require.NoError(t, err)
+	assert.Len(t, results, 1)
 }

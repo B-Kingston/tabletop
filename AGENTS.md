@@ -29,12 +29,71 @@ tabletop/
 ├── SETUP.md
 ├── PLAN.md
 ├── CLAUDE.md
+├── package.json                  # Root workspace config (npm workspaces)
 ├── docker-compose.yml            # Postgres 16 + Redis 7
 ├── run.sh                        # Frontend Docker build → Nginx on :3000
 ├── dev.sh                        # Native backend + frontend, Docker infra only
 ├── backend.sh                    # Fly.io deploy / logs / secrets / migrate
+├── docs/                         # Design specs and implementation plans
+│   ├── mobile/
+│   │   └── local-development.md   # Mobile local dev guide (iOS Simulator + Android Emulator)
+│   └── superpowers/
+│       ├── plans/
+│       └── specs/
 ├── backend/
-└── frontend/
+├── frontend/
+├── mobile/                       # Expo React Native mobile app
+└── packages/
+    └── shared/                   # @tabletop/shared — shared TypeScript types, query keys, utils
+```
+
+### Shared Package (`packages/shared/`)
+
+```
+packages/shared/
+├── src/
+│   ├── index.ts                  # Barrel export (types, queryKeys, utils)
+│   ├── types/
+│   │   ├── models.ts             # Domain model interfaces (User, Instance, Recipe, Wine, etc.)
+│   │   ├── api.ts                # ApiResponse<T>, PaginatedResponse<T>
+│   │   └── index.ts              # Re-exports
+│   ├── queryKeys/
+│   │   └── index.ts              # TanStack Query key factories for all domains
+│   └── utils/
+│       ├── formatters.ts         # formatCurrency, formatRating, formatDate, formatDuration, getMediaLabel
+│       ├── validators.ts         # isValidInstanceName, isValidPassword, isValidRating, etc.
+│       └── index.ts              # Re-exports
+├── package.json                  # @tabletop/shared, type: module, tsc build
+├── tsconfig.json                 # Strict, declaration: true, output to dist/
+└── .gitignore
+```
+
+### Mobile (`mobile/`)
+
+```
+mobile/
+├── app/
+│   ├── _layout.tsx               # Root layout (SafeAreaProvider, StatusBar, Slot)
+│   └── index.tsx                 # Placeholder home screen
+├── src/
+│   ├── lib/
+│   │   └── api.ts                # Placeholder native API adapter (axios)
+│   ├── stores/                   # Zustand stores (auth, instance, ui)
+│   ├── hooks/                    # Custom data-fetching hooks
+│   ├── components/               # React Native UI components
+│   ├── features/                 # Feature modules
+│   ├── navigation/               # Navigation config
+│   ├── theme/                    # Theme tokens
+│   └── test/
+│       └── setup.ts              # React Native Testing Library setup
+├── assets/                       # Expo assets (icon, splash, etc.)
+├── app.json                      # Expo config
+├── eas.json                      # EAS Build profiles
+├── package.json                  # tabletop-mobile, depends on @tabletop/shared
+├── tsconfig.json                 # Strict, path alias @/* → src/*
+├── babel.config.js               # Expo preset + module-resolver
+├── jest.config.js                # jest-expo preset
+└── .gitignore
 ```
 
 ### Backend (`backend/`)
@@ -53,6 +112,7 @@ backend/
 │   │   ├── chat/                 # Chat session/message handlers
 │   │   ├── instances/            # Instance CRUD + membership
 │   │   ├── media/                # Media (TMDB-linked) handlers
+│   │   ├── messages/             # Persisted realtime instance member chat handlers
 │   │   ├── nights/               # Game-night handlers
 │   │   ├── recipes/              # Recipe handlers
 │   │   ├── tmdb/                 # TMDB proxy/search handlers
@@ -193,8 +253,9 @@ Create a new `.sql` migration file **before any code that depends on the new sch
    ALTER TABLE wines DROP COLUMN vineyard;
    ```
 4. **Test locally against a real PostgreSQL database.** SQLite is not a substitute for Postgres DDL validation. Use `make migrate-up` with your local `DATABASE_URL`.
-5. **Review the migration in PR.** The `.sql` file must be reviewed just like Go code.
-6. **Deploy.** The app runs `goose.Up` automatically at startup — migrations apply before the server accepts traffic.
+5. **Run migration safety checks.** Use `make migrate-check` before review. This catches risky future migrations that need explicit approval comments.
+6. **Review the migration in PR.** The `.sql` file must be reviewed just like Go code.
+7. **Deploy.** The app runs `goose.Up` automatically at startup — migrations apply before the server accepts traffic.
 
 ### Rules
 
@@ -203,6 +264,24 @@ Create a new `.sql` migration file **before any code that depends on the new sch
 - **Migrations are immutable after merge.** If a merged migration is wrong, create a *new* migration that fixes it. Never edit a migration that has already been deployed.
 - **No raw SQL in handlers.** If you need a migration, write it in the migrations directory, not inline in a repository or handler.
 - **GORM models and migrations must stay in sync.** The GORM model tags are documentation and query-building metadata, not the schema source of truth. The `.sql` file is the source of truth.
+
+### Data Safety Guardrails
+
+The app auto-runs pending Goose migrations on startup. Treat every migration as a production data operation, not as ordinary application code.
+
+- **Back up before production migration.** Before deploying any migration that can rewrite, delete, or cascade-delete data, take a verified database backup or Neon restore point and record it in the PR/deploy notes.
+- **Prefer expand-contract changes.** Add nullable columns/tables first, deploy code that dual-writes or backfills, verify data, then remove old columns in a later migration. Do not combine add/copy/drop steps in one migration unless the table is disposable.
+- **Avoid destructive DDL by default.** `DROP TABLE`, `DROP COLUMN`, `TRUNCATE`, broad `DELETE`, lossy `ALTER COLUMN ... TYPE`, `DROP CONSTRAINT`, and new `ON DELETE CASCADE` rules require explicit human approval.
+- **Required approval block for future destructive migrations.** Any migration after `00006` containing a risky statement must include all three comments near the top of the file:
+  ```sql
+  -- safety: destructive-change-approved
+  -- safety: data-backup-required
+  -- safety: rollback-reviewed
+  ```
+- **Cascades require extra scrutiny.** `ON DELETE CASCADE` is allowed only when deleting the parent should intentionally delete every child row. For optional references, prefer `ON DELETE SET NULL`.
+- **Lossy type conversions require a data plan.** Date/time truncation, numeric precision changes, string length reductions, enum narrowing, or nullable-to-not-null changes need a backfill/validation query and a rollback story.
+- **Never rely on `Down` as the only recovery path.** Down migrations that recreate dropped columns or tables do not restore the lost data. Recovery must come from backup, restore point, or a reversible expand-contract path.
+- **Test migrations against Postgres.** SQLite `AutoMigrate` tests are useful for unit tests only; they do not validate production DDL semantics.
 
 ## Post-Work Build Evaluation (ENFORCED)
 
@@ -238,6 +317,14 @@ for e in entries:
 ```
 
 This preserves context for code changes and produces precise, actionable findings.
+
+## Local Browser Login Credentials
+
+For in-app browser testing that requires signing in, use the local ignored credentials file at `.tabletop-browser-login.env`.
+
+- This file is intentionally excluded via `.git/info/exclude`; do not commit it or copy its secret values into tracked files.
+- Load `TABLETOP_BROWSER_LOGIN_EMAIL` and `TABLETOP_BROWSER_LOGIN_PASSWORD` from that file when a browser test needs an authenticated session.
+- If the file is missing, ask the user for credentials rather than inventing test values.
 
 ## Data Decisions (Locked)
 

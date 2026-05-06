@@ -17,18 +17,19 @@ import (
 	"tabletop/backend/internal/handlers/chat"
 	"tabletop/backend/internal/handlers/instances"
 	mediahandler "tabletop/backend/internal/handlers/media"
+	messagehandler "tabletop/backend/internal/handlers/messages"
 	nightshandler "tabletop/backend/internal/handlers/nights"
 	recipehandler "tabletop/backend/internal/handlers/recipes"
 	"tabletop/backend/internal/handlers/tmdb"
-	winehandler "tabletop/backend/internal/handlers/wines"
 	"tabletop/backend/internal/handlers/webhooks"
+	winehandler "tabletop/backend/internal/handlers/wines"
 	"tabletop/backend/internal/middleware"
 	"tabletop/backend/internal/models"
-	"tabletop/backend/migrations"
 	redisc "tabletop/backend/internal/redis"
 	"tabletop/backend/internal/repositories"
 	"tabletop/backend/internal/services"
 	ws "tabletop/backend/internal/websocket"
+	"tabletop/backend/migrations"
 )
 
 func main() {
@@ -79,6 +80,7 @@ func main() {
 	wineRepo := repositories.NewWineRepository(db.DB)
 	chatSessionRepo := repositories.NewChatSessionRepository(db.DB)
 	chatMessageRepo := repositories.NewChatMessageRepository(db.DB)
+	memberMessageRepo := repositories.NewMemberMessageRepository(db.DB)
 
 	instanceService := services.NewInstanceService(instanceRepo, userRepo)
 	mediaService := services.NewMediaService(mediaRepo)
@@ -92,9 +94,13 @@ func main() {
 	if redisClient != nil {
 		openaiRateLimiter = redisClient.Client
 	}
-	openaiService := services.NewOpenAIService(cfg.OpenAIAPIKey, openaiRateLimiter, 20)
+	openaiService := services.NewOpenAIService(cfg.OpenAIAPIKey, openaiRateLimiter, 20, cfg.Environment == "production")
 	chatService := services.NewChatService(chatSessionRepo, chatMessageRepo, openaiService)
+	memberMessageService := services.NewMemberMessageService(memberMessageRepo)
 	tmdbService := services.NewTMDBService(cfg.TMDBAPIKey)
+
+	hub := ws.NewHub()
+	go hub.Run()
 
 	authHandler := auth.NewHandler(userRepo)
 	instanceHandler := instances.NewHandler(instanceService, db.DB)
@@ -103,12 +109,10 @@ func main() {
 	wineHandler := winehandler.NewHandler(wineService, db.DB)
 	nightHandler := nightshandler.NewHandler(nightService, db.DB)
 	chatHandler := chat.NewHandler(chatService)
+	messageHandler := messagehandler.NewHandler(memberMessageService, hub)
 	tmdbHandler := tmdb.NewHandler(tmdbService)
 	aiHandler := ai.NewHandler(openaiService)
 	webhookHandler := webhooks.NewHandler(userRepo, cfg.ClerkWebhookSecret)
-
-	hub := ws.NewHub()
-	go hub.Run()
 
 	if cfg.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
@@ -136,32 +140,49 @@ func main() {
 
 	webhookHandler.RegisterRoutes(v1)
 
+	// Standard HTTP auth: reject query-token auth
+	authCfg := &middleware.AuthConfig{
+		ClerkJWKSURL:    cfg.ClerkJWKSURL,
+		DevSkipAuth:     cfg.DevSkipAuth,
+		Issuer:          cfg.ClerkIssuer,
+		Audience:        cfg.ClerkAudience,
+		AllowQueryToken: false,
+	}
+
 	authenticated := v1.Group("")
-	authenticated.Use(middleware.RequireAuth(&middleware.AuthConfig{
-		ClerkJWKSURL: cfg.ClerkJWKSURL,
-		DevSkipAuth:  cfg.DevSkipAuth,
-	}))
+	authenticated.Use(middleware.RequireAuth(authCfg))
 	{
 		authHandler.RegisterRoutes(authenticated)
 		instanceHandler.RegisterRoutes(authenticated)
 	}
 
 	instance := v1.Group("/instances/:instance_id")
-	instance.Use(middleware.RequireAuth(&middleware.AuthConfig{
-		ClerkJWKSURL: cfg.ClerkJWKSURL,
-		DevSkipAuth:  cfg.DevSkipAuth,
-	}))
+	instance.Use(middleware.RequireAuth(authCfg))
 	instance.Use(middleware.RequireInstanceMembership(db.DB))
 	{
 		mediaHandler.RegisterRoutes(instance)
 		recipeHandler.RegisterRoutes(instance)
 		wineHandler.RegisterRoutes(instance)
 		nightHandler.RegisterRoutes(instance)
+		messageHandler.RegisterRoutes(instance)
 		chatHandler.RegisterRoutes(instance)
 		tmdbHandler.RegisterRoutes(instance)
 		aiHandler.RegisterRoutes(instance)
-		instance.GET("/ws", ws.ServeWS(hub, db.DB, cfg.FrontendURL))
 	}
+
+	// WebSocket route: allow query-token auth because browser WebSocket
+	// constructors cannot set Authorization headers.
+	wsAuthCfg := &middleware.AuthConfig{
+		ClerkJWKSURL:    cfg.ClerkJWKSURL,
+		DevSkipAuth:     cfg.DevSkipAuth,
+		Issuer:          cfg.ClerkIssuer,
+		Audience:        cfg.ClerkAudience,
+		AllowQueryToken: true,
+	}
+	wsInstance := v1.Group("/instances/:instance_id")
+	wsInstance.Use(middleware.RequireAuth(wsAuthCfg))
+	wsInstance.Use(middleware.RequireInstanceMembership(db.DB))
+	wsInstance.GET("/ws", ws.ServeWS(hub, db.DB, cfg.FrontendURL))
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,

@@ -2,6 +2,7 @@ package ai
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -42,6 +43,14 @@ func (h *Handler) Chat(c *gin.Context) {
 	}
 
 	if err := h.openaiService.CheckRateLimit(c.Request.Context(), userID); err != nil {
+		if errors.Is(err, services.ErrRateLimiterUnavailable) {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
+			return
+		}
+		if errors.Is(err, services.ErrDailyLimitExceeded) {
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusTooManyRequests, gin.H{"error": err.Error()})
 		return
 	}
@@ -74,6 +83,14 @@ func (h *Handler) ChatStream(c *gin.Context) {
 	}
 
 	if err := h.openaiService.CheckRateLimit(c.Request.Context(), userID); err != nil {
+		if errors.Is(err, services.ErrRateLimiterUnavailable) {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
+			return
+		}
+		if errors.Is(err, services.ErrDailyLimitExceeded) {
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusTooManyRequests, gin.H{"error": err.Error()})
 		return
 	}

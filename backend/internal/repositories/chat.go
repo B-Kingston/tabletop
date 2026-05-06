@@ -19,7 +19,8 @@ type ChatSessionRepository interface {
 
 type ChatMessageRepository interface {
 	Create(ctx context.Context, msg *models.ChatMessage) error
-	ListBySession(ctx context.Context, sessionID uuid.UUID) ([]models.ChatMessage, error)
+	ListBySession(ctx context.Context, instanceID, sessionID uuid.UUID) ([]models.ChatMessage, error)
+	DeleteBySession(ctx context.Context, instanceID, sessionID uuid.UUID) error
 }
 
 type chatSessionRepository struct {
@@ -90,7 +91,19 @@ func (r *chatMessageRepository) Create(ctx context.Context, msg *models.ChatMess
 	return nil
 }
 
-func (r *chatMessageRepository) ListBySession(ctx context.Context, sessionID uuid.UUID) ([]models.ChatMessage, error) {
+func (r *chatMessageRepository) ListBySession(ctx context.Context, instanceID, sessionID uuid.UUID) ([]models.ChatMessage, error) {
+	// Verify session belongs to instance before listing messages
+	var sessionCount int64
+	if err := r.db.WithContext(ctx).
+		Model(&models.ChatSession{}).
+		Where("id = ? AND instance_id = ?", sessionID, instanceID).
+		Count(&sessionCount).Error; err != nil {
+		return nil, fmt.Errorf("failed to verify session ownership: %w", err)
+	}
+	if sessionCount == 0 {
+		return nil, nil
+	}
+
 	var messages []models.ChatMessage
 	if err := r.db.WithContext(ctx).
 		Where("session_id = ?", sessionID).
@@ -99,4 +112,25 @@ func (r *chatMessageRepository) ListBySession(ctx context.Context, sessionID uui
 		return nil, fmt.Errorf("failed to list chat messages: %w", err)
 	}
 	return messages, nil
+}
+
+func (r *chatMessageRepository) DeleteBySession(ctx context.Context, instanceID, sessionID uuid.UUID) error {
+	// Verify session belongs to instance before deleting messages
+	var sessionCount int64
+	if err := r.db.WithContext(ctx).
+		Model(&models.ChatSession{}).
+		Where("id = ? AND instance_id = ?", sessionID, instanceID).
+		Count(&sessionCount).Error; err != nil {
+		return fmt.Errorf("failed to verify session ownership: %w", err)
+	}
+	if sessionCount == 0 {
+		return fmt.Errorf("session not found")
+	}
+
+	if err := r.db.WithContext(ctx).
+		Where("session_id = ?", sessionID).
+		Delete(&models.ChatMessage{}).Error; err != nil {
+		return fmt.Errorf("failed to delete chat messages: %w", err)
+	}
+	return nil
 }

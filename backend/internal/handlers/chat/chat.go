@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -113,6 +114,12 @@ func (h *Handler) SendMessage(c *gin.Context) {
 		return
 	}
 
+	userID, ok := middleware.GetInternalUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not identified"})
+		return
+	}
+
 	sessionID, err := uuid.Parse(c.Param("session_id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid session id"})
@@ -125,8 +132,20 @@ func (h *Handler) SendMessage(c *gin.Context) {
 		return
 	}
 
-	msg, err := h.service.SendMessage(c.Request.Context(), instanceID, sessionID, "user", req.Content)
+	msg, err := h.service.SendMessage(c.Request.Context(), instanceID, sessionID, userID, "user", req.Content)
 	if err != nil {
+		if errors.Is(err, services.ErrSessionNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
+			return
+		}
+		if errors.Is(err, services.ErrRateLimiterUnavailable) {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "OpenAI rate limiter unavailable"})
+			return
+		}
+		if errors.Is(err, services.ErrDailyLimitExceeded) {
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "daily rate limit exceeded"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -148,6 +167,10 @@ func (h *Handler) DeleteSession(c *gin.Context) {
 	}
 
 	if err := h.service.DeleteSession(c.Request.Context(), instanceID, sessionID); err != nil {
+		if errors.Is(err, services.ErrSessionNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -166,14 +189,28 @@ func (h *Handler) GenerateRecipe(c *gin.Context) {
 		return
 	}
 
+	userID, ok := middleware.GetInternalUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not identified"})
+		return
+	}
+
 	var req generateRecipeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	resp, err := h.service.GenerateRecipe(c.Request.Context(), instanceID, req.Prompt)
+	resp, err := h.service.GenerateRecipe(c.Request.Context(), instanceID, userID, req.Prompt)
 	if err != nil {
+		if errors.Is(err, services.ErrRateLimiterUnavailable) {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "OpenAI rate limiter unavailable"})
+			return
+		}
+		if errors.Is(err, services.ErrDailyLimitExceeded) {
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "daily rate limit exceeded"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

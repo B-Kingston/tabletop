@@ -1,0 +1,43 @@
+{
+  "name": "@tabletop/shared",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./types/models": {
+      "types": "./dist/types/models.d.ts",
+      "import": "./dist/types/models.js",
+      "default": "./dist/types/models.js"
+    },
+    "./types/api": {
+      "types": "./dist/types/api.d.ts",
+      "import": "./dist/types/api.js",
+      "default": "./dist/types/api.js"
+    },
+    "./queryKeys": {
+      "types": "./dist/queryKeys/index.d.ts",
+      "import": "./dist/queryKeys/index.js",
+      "default": "./dist/queryKeys/index.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.js",
+      "default": "./dist/utils/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

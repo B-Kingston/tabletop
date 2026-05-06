@@ -67,6 +67,8 @@ func TestValidate_MissingTMDBAPIKey(t *testing.T) {
 		DatabaseURL:    "postgres://test",
 		ClerkSecretKey: "sk_test",
 		ClerkJWKSURL:  "https://test.clerk.accounts.dev/.well-known/jwks.json",
+		ClerkIssuer:    "https://clerk.test.com",
+		ClerkAudience:  "test-audience",
 	}
 
 	err := cfg.Validate()
@@ -79,9 +81,62 @@ func TestValidate_Success(t *testing.T) {
 		DatabaseURL:    "postgres://test",
 		ClerkSecretKey: "sk_test",
 		ClerkJWKSURL:  "https://test.clerk.accounts.dev/.well-known/jwks.json",
+		ClerkIssuer:    "https://clerk.test.com",
+		ClerkAudience:  "test-audience",
 		TMDBAPIKey:     "tmdb_test",
 	}
 
 	err := cfg.Validate()
 	assert.NoError(t, err)
+}
+
+func TestValidate_DevSkipAuthInProduction(t *testing.T) {
+	cfg := &Config{
+		DatabaseURL: "postgres://test",
+		Environment: "production",
+		DevSkipAuth: true,
+	}
+
+	err := cfg.Validate()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "DEV_SKIP_AUTH cannot be enabled in production")
+}
+
+func TestValidate_DevSkipAuthInDevelopment(t *testing.T) {
+	cfg := &Config{
+		DatabaseURL: "postgres://test",
+		Environment: "development",
+		DevSkipAuth: true,
+	}
+
+	err := cfg.Validate()
+	assert.NoError(t, err)
+}
+
+func TestValidate_MissingClerkIssuer(t *testing.T) {
+	cfg := &Config{
+		DatabaseURL:    "postgres://test",
+		ClerkSecretKey: "sk_test",
+		ClerkJWKSURL:  "https://test.clerk.accounts.dev/.well-known/jwks.json",
+		ClerkAudience: "test-audience",
+		TMDBAPIKey:    "tmdb_test",
+	}
+
+	err := cfg.Validate()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "CLERK_ISSUER is required")
+}
+
+func TestValidate_MissingClerkAudience(t *testing.T) {
+	cfg := &Config{
+		DatabaseURL:    "postgres://test",
+		ClerkSecretKey: "sk_test",
+		ClerkJWKSURL:  "https://test.clerk.accounts.dev/.well-known/jwks.json",
+		ClerkIssuer:   "https://clerk.test.com",
+		TMDBAPIKey:    "tmdb_test",
+	}
+
+	err := cfg.Validate()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "CLERK_AUDIENCE is required")
 }

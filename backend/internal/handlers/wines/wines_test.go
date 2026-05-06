@@ -58,9 +58,8 @@ func TestHandler_Create(t *testing.T) {
 	})
 
 	body := CreateRequest{
-		Name:     "Barolo",
-		Producer: "Giacomo",
-		Type:     "red",
+		Name: "Barolo",
+		Type: "red",
 	}
 	jsonBody, _ := json.Marshal(body)
 

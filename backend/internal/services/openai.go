@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,6 +14,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
+
+// ErrRateLimiterUnavailable is returned when the rate limiter is unavailable
+// and the service is running in production (fail-closed).
+var ErrRateLimiterUnavailable = errors.New("rate limiter unavailable")
+
+// ErrDailyLimitExceeded is returned when a user has exceeded their daily
+// OpenAI request limit.
+var ErrDailyLimitExceeded = errors.New("daily rate limit exceeded")
 
 type RateLimiter interface {
 	Incr(ctx context.Context, key string) *redis.IntCmd
@@ -27,6 +36,7 @@ type OpenAIService struct {
 	model       string
 	rateLimiter RateLimiter
 	dailyLimit  int
+	production  bool
 }
 
 type OpenAIMessage struct {
@@ -81,7 +91,7 @@ respond with valid JSON matching this schema:
 
 Always include prepTime, cookTime, and at least 2 steps. Use clear, concise markdown for step content.`
 
-func NewOpenAIService(apiKey string, rateLimiter RateLimiter, dailyLimit int) *OpenAIService {
+func NewOpenAIService(apiKey string, rateLimiter RateLimiter, dailyLimit int, production bool) *OpenAIService {
 	return &OpenAIService{
 		apiKey:      apiKey,
 		baseURL:     "https://api.openai.com/v1",
@@ -89,6 +99,7 @@ func NewOpenAIService(apiKey string, rateLimiter RateLimiter, dailyLimit int) *O
 		model:       "gpt-4o-mini",
 		rateLimiter: rateLimiter,
 		dailyLimit:  dailyLimit,
+		production:  production,
 	}
 }
 
@@ -98,18 +109,24 @@ func (s *OpenAIService) SetBaseURL(url string) {
 
 func (s *OpenAIService) CheckRateLimit(ctx context.Context, userID uuid.UUID) error {
 	if s.rateLimiter == nil {
+		if s.production {
+			return ErrRateLimiterUnavailable
+		}
 		return nil
 	}
 	key := fmt.Sprintf("openai_rate:%s:%s", userID.String(), time.Now().Format("2006-01-02"))
 	count, err := s.rateLimiter.Incr(ctx, key).Result()
 	if err != nil {
+		if s.production {
+			return ErrRateLimiterUnavailable
+		}
 		return nil
 	}
 	if count == 1 {
 		s.rateLimiter.Expire(ctx, key, 24*time.Hour)
 	}
 	if count > int64(s.dailyLimit) {
-		return fmt.Errorf("daily rate limit exceeded (%d requests)", s.dailyLimit)
+		return fmt.Errorf("%w (%d requests)", ErrDailyLimitExceeded, s.dailyLimit)
 	}
 	return nil
 }

@@ -25,6 +25,8 @@ type Config struct {
 	ClerkPublishableKey string
 	ClerkWebhookSecret  string
 	ClerkJWKSURL        string
+	ClerkIssuer         string
+	ClerkAudience       string
 
 	// External APIs
 	TMDBAPIKey    string
@@ -57,6 +59,8 @@ func Load() *Config {
 		ClerkPublishableKey: getEnv("CLERK_PUBLISHABLE_KEY", ""),
 		ClerkWebhookSecret:  getEnv("CLERK_WEBHOOK_SECRET", ""),
 		ClerkJWKSURL:        getEnv("CLERK_JWKS_URL", ""),
+		ClerkIssuer:         getEnv("CLERK_ISSUER", ""),
+		ClerkAudience:       getEnv("CLERK_AUDIENCE", ""),
 		TMDBAPIKey:          getEnv("TMDB_API_KEY", ""),
 		OpenAIAPIKey:        getEnv("OPENAI_API_KEY", ""),
 		FrontendURL:         getEnv("FRONTEND_URL", "http://localhost:3000"),
@@ -98,6 +102,9 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("DATABASE_URL is required")
 	}
 	if c.DevSkipAuth {
+		if c.Environment == "production" {
+			return fmt.Errorf("DEV_SKIP_AUTH cannot be enabled in production")
+		}
 		return nil
 	}
 	if c.ClerkSecretKey == "" {
@@ -105,6 +112,12 @@ func (c *Config) Validate() error {
 	}
 	if c.ClerkJWKSURL == "" {
 		return fmt.Errorf("CLERK_JWKS_URL is required")
+	}
+	if c.ClerkIssuer == "" {
+		return fmt.Errorf("CLERK_ISSUER is required")
+	}
+	if c.ClerkAudience == "" {
+		return fmt.Errorf("CLERK_AUDIENCE is required")
 	}
 	if c.TMDBAPIKey == "" {
 		return fmt.Errorf("TMDB_API_KEY is required")

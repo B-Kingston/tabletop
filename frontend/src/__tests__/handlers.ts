@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
 
-const BASE = 'http://localhost:8080/v1'
+const BASE = `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/v1`
 
 export const authHandlers = [
   http.post(`${BASE}/auth/clerk-sync`, async () => {
@@ -388,6 +388,54 @@ export const chatHandlers = [
   }),
 ]
 
+export const memberMessageHandlers = [
+  http.get(`${BASE}/instances/:instanceId/messages`, () => {
+    return HttpResponse.json({
+      data: [
+        {
+          id: 'member-msg-1',
+          instanceId: 'inst-1',
+          userId: 'user-1',
+          content: 'Dinner is at 7',
+          createdAt: '2024-01-01T00:00:00Z',
+          user: {
+            id: 'user-1',
+            clerkId: 'clerk-1',
+            email: 'test@test.com',
+            name: 'Test User',
+            avatarUrl: '',
+            createdAt: '2024-01-01T00:00:00Z',
+            updatedAt: '2024-01-01T00:00:00Z',
+          },
+        },
+      ],
+      error: null,
+    })
+  }),
+  http.post(`${BASE}/instances/:instanceId/messages`, async ({ request }) => {
+    const body = await request.json() as { content: string }
+    return HttpResponse.json({
+      data: {
+        id: 'member-msg-new',
+        instanceId: 'inst-1',
+        userId: 'user-1',
+        content: body.content,
+        createdAt: '2024-01-01T00:01:00Z',
+        user: {
+          id: 'user-1',
+          clerkId: 'clerk-1',
+          email: 'test@test.com',
+          name: 'Test User',
+          avatarUrl: '',
+          createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-01-01T00:00:00Z',
+        },
+      },
+      error: null,
+    }, { status: 201 })
+  }),
+]
+
 export const tmdbHandlers = [
   http.get(`${BASE}/instances/:instanceId/tmdb/search`, ({ request }) => {
     const url = new URL(request.url)
@@ -538,6 +586,7 @@ export const allHandlers = [
   ...recipeHandlers,
   ...wineHandlers,
   ...nightHandlers,
+  ...memberMessageHandlers,
   ...chatHandlers,
   ...tmdbHandlers,
   ...aiHandlers,

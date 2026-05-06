@@ -121,6 +121,15 @@ export interface ChatMessage {
   createdAt: string
 }
 
+export interface MemberMessage {
+  id: string
+  instanceId: string
+  userId: string
+  content: string
+  createdAt: string
+  user?: User
+}
+
 export interface Night {
   id: string
   instanceId: string

@@ -1,5 +1,5 @@
 import { Link, useMatchRoute } from '@tanstack/react-router'
-import { Film, ChefHat, Wine, MessageSquare, Moon } from 'lucide-react'
+import { Bot, Film, ChefHat, Wine, MessageSquare, Moon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface InstanceNavProps {
@@ -11,7 +11,8 @@ const navItems = [
   { path: '/recipes' as const, label: 'Recipes', icon: ChefHat },
   { path: '/wines' as const, label: 'Wines', icon: Wine },
   { path: '/nights' as const, label: 'Nights', icon: Moon },
-  { path: '/chat' as const, label: 'Chat', icon: MessageSquare },
+  { path: '/chat' as const, label: 'Messages', icon: MessageSquare },
+  { path: '/ai' as const, label: 'AI Assistant', icon: Bot },
 ]
 
 export function InstanceNav({ instanceId }: InstanceNavProps) {

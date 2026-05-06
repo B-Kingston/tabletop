@@ -202,3 +202,33 @@ npm run dev
 ```
 
 The app will be at http://localhost:3000 and API at http://localhost:8080.
+
+---
+
+## 8. Mobile App (iOS & Android)
+
+Tabletop has three clients: **web** (React + Vite), **iOS** (Expo React Native), and **Android** (same Expo codebase). The mobile app lives in `mobile/` and uses Expo SDK 52.
+
+**Quick start:**
+
+```bash
+# 1. Backend (same as web — can be shared)
+./dev.sh
+
+# 2. Mobile app
+cd mobile
+cp .env.example .env
+npx expo start
+# Press 'i' for iOS Simulator or 'a' for Android Emulator
+```
+
+**Platform environment variables (in `mobile/.env`):**
+
+| Variable | Purpose |
+|----------|--------|
+| `EXPO_PUBLIC_API_URL` | Backend API URL (varies by platform — see below) |
+| `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key for mobile auth |
+
+**Critical platform difference:** The Android Emulator uses `10.0.2.2` to reach your Mac's localhost (NOT `localhost`). The iOS Simulator shares your Mac's network, so `localhost` works directly. A physical device needs your Mac's LAN IP. See the full guide for details.
+
+**Full documentation:** See [`docs/mobile/local-development.md`](docs/mobile/local-development.md) for a complete walkthrough covering iOS Simulator, Android Emulator, physical devices, auth modes, and troubleshooting.

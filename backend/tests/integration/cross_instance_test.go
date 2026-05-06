@@ -77,7 +77,7 @@ func TestCrossInstance_WineAccess(t *testing.T) {
 	wineSvc := services.NewWineService(wineRepo)
 	ctx := context.Background()
 
-	wine, err := wineSvc.Create(ctx, instanceA, userA, "Barolo", "Producer", "red", nil, nil, "", nil, "", nil)
+	wine, err := wineSvc.Create(ctx, instanceA, userA, "Barolo", "red", nil, nil, "", nil)
 	require.NoError(t, err)
 
 	_, err = wineSvc.GetByID(ctx, instanceB, wine.ID)
@@ -240,7 +240,7 @@ func TestCrossInstance_WineDeleteFromWrongInstance(t *testing.T) {
 	wineSvc := services.NewWineService(wineRepo)
 	ctx := context.Background()
 
-	wine, err := wineSvc.Create(ctx, instanceA, userA, "Secret Wine", "P", "red", nil, nil, "", nil, "", nil)
+	wine, err := wineSvc.Create(ctx, instanceA, userA, "Secret Wine", "red", nil, nil, "", nil)
 	require.NoError(t, err)
 
 	err = wineRepo.Delete(ctx, instanceB, wine.ID)

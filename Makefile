@@ -1,4 +1,4 @@
-.PHONY: dev prod test test-backend test-frontend build lint migrate install
+.PHONY: dev prod test test-backend test-frontend build lint migrate migrate-check install
 
 # Development — delegates to scripts for single source of truth
 dev:
@@ -58,6 +58,10 @@ migrate-create:
 
 migrate-status:
 	@cd backend && go run github.com/pressly/goose/v3/cmd/goose@latest -dir=migrations postgres "$$DATABASE_URL" status
+
+migrate-check:
+	@echo "Checking migration safety guardrails..."
+	@cd backend && GOCACHE="$$(pwd)/.cache/go-build" go test ./internal/database -run 'TestAllFutureMigrationsHaveSafetyApprovalForDestructiveStatements' -v
 
 # Install
 install:

@@ -62,7 +62,7 @@ export function ChatPage() {
       >
         <div className="w-64 flex-shrink-0 flex flex-col border-r border-neutral-200 pr-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-neutral-900">Sessions</h2>
+            <h2 className="text-sm font-semibold text-neutral-900">AI Assistant Sessions</h2>
             <Button variant="ghost" size="sm" onClick={handleCreateSession}>
               <Plus className="h-4 w-4" />
             </Button>
@@ -81,7 +81,7 @@ export function ChatPage() {
                 }`}
                 onClick={() => setActiveSessionId(session.id)}
               >
-                <span className="truncate">{session.title || 'New Chat'}</span>
+                <span className="truncate">{session.title || 'New AI Chat'}</span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
@@ -111,7 +111,7 @@ export function ChatPage() {
             </>
           ) : (
             <div className="flex flex-1 items-center justify-center text-neutral-400">
-              <p className="text-sm">Select or create a chat session</p>
+              <p className="text-sm">Select or create an AI Assistant session</p>
             </div>
           )}
         </div>
@@ -120,8 +120,8 @@ export function ChatPage() {
           open={deleteOpen}
           onClose={() => setDeleteOpen(false)}
           onConfirm={handleDeleteSession}
-          title="Delete Chat"
-          description="Are you sure you want to delete this chat session?"
+          title="Delete AI Chat"
+          description="Are you sure you want to delete this AI Assistant session?"
           confirmLabel="Delete"
           variant="destructive"
           loading={deleteSession.isPending}

@@ -42,7 +42,7 @@ func TestOpenAIService_ChatCompletion(t *testing.T) {
 	}))
 	defer server.Close()
 
-	svc := NewOpenAIService("test-key", nil, 20)
+	svc := NewOpenAIService("test-key", nil, 20, false)
 	svc.baseURL = server.URL
 
 	resp, err := svc.ChatCompletion(context.Background(), []OpenAIMessage{
@@ -61,7 +61,7 @@ func TestOpenAIService_ChatCompletion_ErrorResponse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	svc := NewOpenAIService("test-key", nil, 20)
+	svc := NewOpenAIService("test-key", nil, 20, false)
 	svc.baseURL = server.URL
 
 	_, err := svc.ChatCompletion(context.Background(), []OpenAIMessage{
@@ -91,7 +91,7 @@ func TestOpenAIService_ChatCompletionStream(t *testing.T) {
 	}))
 	defer server.Close()
 
-	svc := NewOpenAIService("test-key", nil, 20)
+	svc := NewOpenAIService("test-key", nil, 20, false)
 	svc.baseURL = server.URL
 
 	ch, cancel, err := svc.ChatCompletionStream(context.Background(), []OpenAIMessage{
@@ -115,7 +115,7 @@ func TestOpenAIService_ChatCompletionStream_ErrorResponse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	svc := NewOpenAIService("test-key", nil, 20)
+	svc := NewOpenAIService("test-key", nil, 20, false)
 	svc.baseURL = server.URL
 
 	_, _, err := svc.ChatCompletionStream(context.Background(), []OpenAIMessage{
@@ -126,19 +126,25 @@ func TestOpenAIService_ChatCompletionStream_ErrorResponse(t *testing.T) {
 }
 
 func TestOpenAIService_CheckRateLimit_NilLimiter(t *testing.T) {
-	svc := NewOpenAIService("test-key", nil, 20)
+	svc := NewOpenAIService("test-key", nil, 20, false)
 	err := svc.CheckRateLimit(context.Background(), uuid.New())
 	assert.NoError(t, err)
 }
 
+func TestOpenAIService_CheckRateLimit_NilLimiter_Production(t *testing.T) {
+	svc := NewOpenAIService("test-key", nil, 20, true)
+	err := svc.CheckRateLimit(context.Background(), uuid.New())
+	assert.ErrorIs(t, err, ErrRateLimiterUnavailable)
+}
+
 func TestOpenAIService_CheckRateLimit_WithinLimit(t *testing.T) {
-	svc := NewOpenAIService("test-key", &mockRateLimiter{incrVal: 1, expireVal: true}, 5)
+	svc := NewOpenAIService("test-key", &mockRateLimiter{incrVal: 1, expireVal: true}, 5, false)
 	err := svc.CheckRateLimit(context.Background(), uuid.New())
 	assert.NoError(t, err)
 }
 
 func TestOpenAIService_CheckRateLimit_ExceedsLimit(t *testing.T) {
-	svc := NewOpenAIService("test-key", &mockRateLimiter{incrVal: 21, expireVal: true}, 20)
+	svc := NewOpenAIService("test-key", &mockRateLimiter{incrVal: 21, expireVal: true}, 20, false)
 	err := svc.CheckRateLimit(context.Background(), uuid.New())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "rate limit exceeded")
@@ -146,7 +152,7 @@ func TestOpenAIService_CheckRateLimit_ExceedsLimit(t *testing.T) {
 
 func TestOpenAIService_CheckRateLimit_SetsExpiryOnFirst(t *testing.T) {
 	mock := &mockRateLimiter{incrVal: 1, expireVal: true}
-	svc := NewOpenAIService("test-key", mock, 20)
+	svc := NewOpenAIService("test-key", mock, 20, false)
 	err := svc.CheckRateLimit(context.Background(), uuid.New())
 	assert.NoError(t, err)
 	assert.True(t, mock.expireCalled)
@@ -154,16 +160,22 @@ func TestOpenAIService_CheckRateLimit_SetsExpiryOnFirst(t *testing.T) {
 
 func TestOpenAIService_CheckRateLimit_NoExpiryOnSubsequent(t *testing.T) {
 	mock := &mockRateLimiter{incrVal: 5, expireVal: true}
-	svc := NewOpenAIService("test-key", mock, 20)
+	svc := NewOpenAIService("test-key", mock, 20, false)
 	err := svc.CheckRateLimit(context.Background(), uuid.New())
 	assert.NoError(t, err)
 	assert.False(t, mock.expireCalled)
 }
 
-func TestOpenAIService_CheckRateLimit_RedisError(t *testing.T) {
-	svc := NewOpenAIService("test-key", &mockRateLimiter{incrErr: assert.AnError}, 20)
+func TestOpenAIService_CheckRateLimit_RedisError_NotProduction(t *testing.T) {
+	svc := NewOpenAIService("test-key", &mockRateLimiter{incrErr: assert.AnError}, 20, false)
 	err := svc.CheckRateLimit(context.Background(), uuid.New())
 	assert.NoError(t, err)
+}
+
+func TestOpenAIService_CheckRateLimit_RedisError_Production(t *testing.T) {
+	svc := NewOpenAIService("test-key", &mockRateLimiter{incrErr: assert.AnError}, 20, true)
+	err := svc.CheckRateLimit(context.Background(), uuid.New())
+	assert.ErrorIs(t, err, ErrRateLimiterUnavailable)
 }
 
 type mockRateLimiter struct {

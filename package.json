@@ -1,0 +1,9 @@
+{
+  "name": "tabletop",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "mobile",
+    "frontend"
+  ]
+}

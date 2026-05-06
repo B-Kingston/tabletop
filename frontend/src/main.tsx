@@ -3,8 +3,8 @@ import ReactDOM from 'react-dom/client'
 import { ClerkProvider } from '@/lib/clerk'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
+import { AuthSetup } from '@/components/layout/AuthSetup'
 import { setAuthTokenGetter } from './lib/api'
-import { useAuth } from './hooks/useAuth'
 import { queryClient } from './lib/queryClient'
 import { router } from './router'
 import './index.css'
@@ -19,12 +19,6 @@ if (!clerkPubKey && !devSkipAuth) {
 // Dev mode: set token synchronously before React mounts so first requests work
 if (devSkipAuth) {
   setAuthTokenGetter(async () => 'dev')
-}
-
-function AuthSetup({ children }: { children: React.ReactNode }) {
-  // Triggers token getter registration + auto user sync via useEffect
-  useAuth()
-  return <>{children}</>
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
