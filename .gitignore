@@ -1,6 +1,7 @@
 # Backend
 backend/api
 backend/bin/
+backend/.cache/
 *.exe
 *.test
 
@@ -30,6 +31,12 @@ vendor/
 
 # Docker
 *.log
+
+# Local debug/context artifacts
+*.har
+mobile-context/
+progress.md
+staging.sh
 
 # Claude
 .claude/
