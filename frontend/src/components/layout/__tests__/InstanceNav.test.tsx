@@ -9,11 +9,11 @@ vi.mock('@tanstack/react-router', () => ({
 }))
 
 describe('InstanceNav', () => {
-  it('separates member messages from AI assistant', () => {
+  it('shows member messages in navigation', () => {
     render(<InstanceNav instanceId="inst-1" />)
 
     expect(screen.getByRole('link', { name: /messages/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /ai assistant/i })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /assistant/i })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /^chat$/i })).not.toBeInTheDocument()
   })
 })

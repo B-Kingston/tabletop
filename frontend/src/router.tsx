@@ -15,7 +15,6 @@ import { NightList } from './pages/NightList'
 import { NightDetail } from './pages/NightDetail'
 import { NightEdit } from './pages/NightEdit'
 import { SpinTheNight } from './pages/SpinTheNight'
-import { ChatPage } from './pages/ChatPage'
 import { MemberMessagesPage } from './pages/MemberMessagesPage'
 
 const rootRoute = createRootRoute({ component: Outlet })
@@ -45,7 +44,6 @@ const spinRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path:
 const nightDetailRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path: '/nights/$nightId', component: NightDetail })
 const nightEditRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path: '/nights/$nightId/edit', component: NightEdit })
 const messagesRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path: '/chat', component: MemberMessagesPage })
-const aiAssistantRoute = createRoute({ getParentRoute: () => instanceLayoutRoute, path: '/ai', component: ChatPage })
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
@@ -67,7 +65,6 @@ const routeTree = rootRoute.addChildren([
     nightDetailRoute,
     nightEditRoute,
     messagesRoute,
-    aiAssistantRoute,
   ]),
 ])
 
