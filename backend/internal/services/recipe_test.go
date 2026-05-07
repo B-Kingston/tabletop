@@ -2,6 +2,10 @@ package services
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -193,4 +197,123 @@ func TestRecipeService_Delete(t *testing.T) {
 
 	_, err = svc.GetByID(ctx, instanceID, recipe.ID)
 	assert.Error(t, err)
+}
+
+func TestRecipeService_RemixRecipeCreatesVersionsAndReplacesCurrentRecipe(t *testing.T) {
+	db := setupServiceTestDB(t)
+	repo := repositories.NewRecipeRepository(db)
+	openAI := openAITestRecipeServer(t, "Vegetarian Pasta", "make it vegetarian")
+	svc := NewRecipeService(repo, openAI)
+	ctx := context.Background()
+
+	instanceID, userID := setupRecipeServiceTest(t)
+	recipe, err := svc.Create(ctx, instanceID, userID,
+		"Chicken Pasta", "Original", "https://example.com/original", 10, 20, 2, "",
+		[]IngredientInput{{Name: "Chicken", Quantity: "200", Unit: "g"}},
+		[]StepInput{{OrderIndex: 1, Content: "Cook chicken"}, {OrderIndex: 2, Content: "Add pasta"}},
+		[]string{"pasta"},
+	)
+	require.NoError(t, err)
+
+	remixed, err := svc.RemixRecipe(ctx, instanceID, recipe.ID, userID, "make it vegetarian", 2)
+
+	require.NoError(t, err)
+	assert.Equal(t, "Vegetarian Pasta", remixed.Title)
+	assert.Equal(t, "https://example.com/remix", remixed.SourceURL)
+	assert.Equal(t, []string{"https://example.com/remix"}, []string(remixed.SourceURLs))
+	assert.Equal(t, "Mushrooms", remixed.Ingredients[0].Name)
+
+	versions, err := svc.ListVersions(ctx, instanceID, recipe.ID)
+	require.NoError(t, err)
+	require.Len(t, versions, 2)
+	assert.Equal(t, 2, versions[0].VersionNumber)
+	assert.True(t, versions[0].IsCurrent)
+	assert.Equal(t, "make it vegetarian", versions[0].RemixPrompt)
+	assert.Contains(t, string(versions[1].Snapshot), "Chicken Pasta")
+}
+
+func TestRecipeService_GenerateRecipeAddsSimplicityGuidance(t *testing.T) {
+	openAI := openAITestRecipeServer(t, "Simple Pasta", "Keep the recipe extremely simple")
+	svc := NewRecipeService(nil, openAI)
+
+	_, err := svc.GenerateRecipe(context.Background(), uuid.New(), "weeknight pasta", 1)
+
+	require.NoError(t, err)
+}
+
+func TestRecipeService_RestoreVersionReplacesCurrentRecipe(t *testing.T) {
+	db := setupServiceTestDB(t)
+	repo := repositories.NewRecipeRepository(db)
+	openAI := openAITestRecipeServer(t, "Vegetarian Pasta", "make it vegetarian")
+	svc := NewRecipeService(repo, openAI)
+	ctx := context.Background()
+
+	instanceID, userID := setupRecipeServiceTest(t)
+	recipe, err := svc.Create(ctx, instanceID, userID,
+		"Chicken Pasta", "Original", "https://example.com/original", 10, 20, 2, "",
+		[]IngredientInput{{Name: "Chicken", Quantity: "200", Unit: "g"}},
+		[]StepInput{{OrderIndex: 1, Content: "Cook chicken"}, {OrderIndex: 2, Content: "Add pasta"}},
+		[]string{"pasta"},
+	)
+	require.NoError(t, err)
+
+	_, err = svc.RemixRecipe(ctx, instanceID, recipe.ID, userID, "make it vegetarian", 3)
+	require.NoError(t, err)
+	versions, err := svc.ListVersions(ctx, instanceID, recipe.ID)
+	require.NoError(t, err)
+	originalVersion := versions[1]
+
+	restored, err := svc.RestoreVersion(ctx, instanceID, recipe.ID, originalVersion.ID, userID)
+
+	require.NoError(t, err)
+	assert.Equal(t, "Chicken Pasta", restored.Title)
+	assert.Equal(t, "Chicken", restored.Ingredients[0].Name)
+
+	versions, err = svc.ListVersions(ctx, instanceID, recipe.ID)
+	require.NoError(t, err)
+	assert.True(t, versions[1].IsCurrent)
+	assert.False(t, versions[0].IsCurrent)
+}
+
+func openAITestRecipeServer(t *testing.T, title, expectedPrompt string) *OpenAIService {
+	t.Helper()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req OpenAIResponsesRequest
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
+		assert.Contains(t, req.Input, expectedPrompt)
+		if strings.Contains(req.Input, "Current recipe JSON") {
+			assert.Contains(t, req.Input, "Chicken Pasta")
+		}
+
+		json.NewEncoder(w).Encode(map[string]any{
+			"id": "resp-remix",
+			"output": []any{
+				map[string]any{
+					"type":   "web_search_call",
+					"status": "completed",
+					"action": map[string]any{
+						"type": "search",
+						"sources": []any{
+							map[string]any{"url": "https://example.com/remix", "title": "Remix Source"},
+						},
+					},
+				},
+				map[string]any{
+					"type": "message",
+					"content": []any{
+						map[string]any{
+							"type": "output_text",
+							"text": `{"title":"` + title + `","description":"Remixed","prepTime":12,"cookTime":18,"servings":2,"sourceUrls":["https://example.com/remix"],"ingredients":[{"name":"Mushrooms","quantity":"200","unit":"g","optional":false}],"steps":[{"orderIndex":1,"title":"Prep","content":"Slice mushrooms.","durationMin":5},{"orderIndex":2,"title":"Cook","content":"Cook with pasta.","durationMin":15}],"tags":["pasta","vegetarian"]}`,
+						},
+					},
+				},
+			},
+		})
+	}))
+	t.Cleanup(server.Close)
+
+	openAI := NewOpenAIService("test-key", nil, 20, false)
+	openAI.SetBaseURL(server.URL)
+	return openAI
 }

@@ -13,10 +13,10 @@ import (
 // ---- Mock repositories ----
 
 type mockNightRepo struct {
-	nights      map[uuid.UUID]*models.Night
-	createErr   error
-	updateErr   error
-	deleteErr   error
+	nights    map[uuid.UUID]*models.Night
+	createErr error
+	updateErr error
+	deleteErr error
 }
 
 func newMockNightRepo() *mockNightRepo {
@@ -89,8 +89,10 @@ func (m *mockWineRepo) GetByID(ctx context.Context, instanceID, id uuid.UUID) (*
 	copyWine := *wine
 	return &copyWine, nil
 }
-func (m *mockWineRepo) List(ctx context.Context, instanceID uuid.UUID, wineType string) ([]models.Wine, error) { return nil, nil }
-func (m *mockWineRepo) Update(ctx context.Context, wine *models.Wine) error { return nil }
+func (m *mockWineRepo) List(ctx context.Context, instanceID uuid.UUID, wineType string) ([]models.Wine, error) {
+	return nil, nil
+}
+func (m *mockWineRepo) Update(ctx context.Context, wine *models.Wine) error        { return nil }
 func (m *mockWineRepo) Delete(ctx context.Context, instanceID, id uuid.UUID) error { return nil }
 
 type mockRecipeRepo struct {
@@ -110,13 +112,38 @@ func (m *mockRecipeRepo) GetByID(ctx context.Context, instanceID, id uuid.UUID) 
 	copyRecipe := *recipe
 	return &copyRecipe, nil
 }
-func (m *mockRecipeRepo) List(ctx context.Context, instanceID uuid.UUID, tag string) ([]models.Recipe, error) { return nil, nil }
-func (m *mockRecipeRepo) Update(ctx context.Context, recipe *models.Recipe) error { return nil }
+func (m *mockRecipeRepo) List(ctx context.Context, instanceID uuid.UUID, tag string) ([]models.Recipe, error) {
+	return nil, nil
+}
+func (m *mockRecipeRepo) Update(ctx context.Context, recipe *models.Recipe) error    { return nil }
 func (m *mockRecipeRepo) Delete(ctx context.Context, instanceID, id uuid.UUID) error { return nil }
-func (m *mockRecipeRepo) ReplaceIngredients(ctx context.Context, recipeID uuid.UUID, ingredients []models.Ingredient) error { return nil }
-func (m *mockRecipeRepo) ReplaceSteps(ctx context.Context, recipeID uuid.UUID, steps []models.RecipeStep) error { return nil }
-func (m *mockRecipeRepo) ReplaceTags(ctx context.Context, recipeID uuid.UUID, tags []models.RecipeTag) error { return nil }
-func (m *mockRecipeRepo) FindOrCreateTag(ctx context.Context, name string) (*models.RecipeTag, error) { return nil, nil }
+func (m *mockRecipeRepo) ReplaceIngredients(ctx context.Context, recipeID uuid.UUID, ingredients []models.Ingredient) error {
+	return nil
+}
+func (m *mockRecipeRepo) ReplaceSteps(ctx context.Context, recipeID uuid.UUID, steps []models.RecipeStep) error {
+	return nil
+}
+func (m *mockRecipeRepo) ReplaceTags(ctx context.Context, recipeID uuid.UUID, tags []models.RecipeTag) error {
+	return nil
+}
+func (m *mockRecipeRepo) FindOrCreateTag(ctx context.Context, name string) (*models.RecipeTag, error) {
+	return nil, nil
+}
+func (m *mockRecipeRepo) CreateVersion(ctx context.Context, version *models.RecipeVersion) error {
+	return nil
+}
+func (m *mockRecipeRepo) ListVersions(ctx context.Context, instanceID, recipeID uuid.UUID) ([]models.RecipeVersion, error) {
+	return nil, nil
+}
+func (m *mockRecipeRepo) GetVersion(ctx context.Context, instanceID, recipeID, versionID uuid.UUID) (*models.RecipeVersion, error) {
+	return nil, nil
+}
+func (m *mockRecipeRepo) NextVersionNumber(ctx context.Context, recipeID uuid.UUID) (int, error) {
+	return 1, nil
+}
+func (m *mockRecipeRepo) MarkVersionCurrent(ctx context.Context, recipeID, versionID uuid.UUID) error {
+	return nil
+}
 
 type mockMediaRepo struct {
 	items map[uuid.UUID]*models.MediaItem
@@ -135,8 +162,10 @@ func (m *mockMediaRepo) GetByID(ctx context.Context, instanceID, id uuid.UUID) (
 	copyItem := *item
 	return &copyItem, nil
 }
-func (m *mockMediaRepo) List(ctx context.Context, instanceID uuid.UUID, status, mediaType string) ([]models.MediaItem, error) { return nil, nil }
-func (m *mockMediaRepo) Update(ctx context.Context, item *models.MediaItem) error { return nil }
+func (m *mockMediaRepo) List(ctx context.Context, instanceID uuid.UUID, status, mediaType string) ([]models.MediaItem, error) {
+	return nil, nil
+}
+func (m *mockMediaRepo) Update(ctx context.Context, item *models.MediaItem) error   { return nil }
 func (m *mockMediaRepo) Delete(ctx context.Context, instanceID, id uuid.UUID) error { return nil }
 
 // ---- Service tests ----

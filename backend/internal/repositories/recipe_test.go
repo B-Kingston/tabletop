@@ -262,6 +262,72 @@ func TestRecipeRepository_ReplaceSteps(t *testing.T) {
 	assert.Equal(t, "New step one", found.Steps[0].Content)
 }
 
+func TestRecipeRepository_CreateAndListVersions(t *testing.T) {
+	db, instanceID, userID := seedRecipeTestDB(t)
+	repo := NewRecipeRepository(db)
+	ctx := context.Background()
+
+	recipe := createTestRecipe(instanceID, userID)
+	require.NoError(t, repo.Create(ctx, recipe))
+
+	first := &models.RecipeVersion{
+		InstanceID:    instanceID,
+		RecipeID:      recipe.ID,
+		VersionNumber: 1,
+		RemixPrompt:   "",
+		Snapshot:      models.JSONBlob(`{"title":"Test Recipe"}`),
+		CreatedByID:   userID,
+		IsCurrent:     false,
+	}
+	second := &models.RecipeVersion{
+		InstanceID:    instanceID,
+		RecipeID:      recipe.ID,
+		VersionNumber: 2,
+		RemixPrompt:   "make it vegetarian",
+		Snapshot:      models.JSONBlob(`{"title":"Vegetarian Test Recipe"}`),
+		CreatedByID:   userID,
+		IsCurrent:     true,
+	}
+
+	require.NoError(t, repo.CreateVersion(ctx, first))
+	require.NoError(t, repo.CreateVersion(ctx, second))
+
+	versions, err := repo.ListVersions(ctx, instanceID, recipe.ID)
+	require.NoError(t, err)
+	require.Len(t, versions, 2)
+	assert.Equal(t, 2, versions[0].VersionNumber)
+	assert.True(t, versions[0].IsCurrent)
+	assert.Equal(t, "make it vegetarian", versions[0].RemixPrompt)
+	assert.Equal(t, 1, versions[1].VersionNumber)
+}
+
+func TestRecipeRepository_GetVersionScopedByInstance(t *testing.T) {
+	db, instanceID, userID := seedRecipeTestDB(t)
+	repo := NewRecipeRepository(db)
+	ctx := context.Background()
+
+	recipe := createTestRecipe(instanceID, userID)
+	require.NoError(t, repo.Create(ctx, recipe))
+
+	version := &models.RecipeVersion{
+		InstanceID:    instanceID,
+		RecipeID:      recipe.ID,
+		VersionNumber: 1,
+		Snapshot:      models.JSONBlob(`{"title":"Test Recipe"}`),
+		CreatedByID:   userID,
+		IsCurrent:     true,
+	}
+	require.NoError(t, repo.CreateVersion(ctx, version))
+
+	found, err := repo.GetVersion(ctx, instanceID, recipe.ID, version.ID)
+	require.NoError(t, err)
+	require.NotNil(t, found)
+
+	wrongInstance, err := repo.GetVersion(ctx, uuid.New(), recipe.ID, version.ID)
+	require.NoError(t, err)
+	assert.Nil(t, wrongInstance)
+}
+
 func TestRecipeRepository_ReplaceTags(t *testing.T) {
 	db, instanceID, userID := seedRecipeTestDB(t)
 	repo := NewRecipeRepository(db)

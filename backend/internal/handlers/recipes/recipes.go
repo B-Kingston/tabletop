@@ -30,6 +30,9 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 		recipes.PATCH("/:recipe_id", h.Update)
 		recipes.DELETE("/:recipe_id", h.Delete)
 		recipes.POST("/generate", h.Generate)
+		recipes.GET("/:recipe_id/versions", h.ListVersions)
+		recipes.POST("/:recipe_id/remix", h.Remix)
+		recipes.POST("/:recipe_id/versions/:version_id/restore", h.RestoreVersion)
 	}
 }
 
@@ -51,6 +54,7 @@ type CreateRequest struct {
 	Title       string                  `json:"title" binding:"required"`
 	Description string                  `json:"description"`
 	SourceURL   string                  `json:"sourceUrl"`
+	SourceURLs  []string                `json:"sourceUrls"`
 	PrepTime    int                     `json:"prepTime"`
 	CookTime    int                     `json:"cookTime"`
 	Servings    int                     `json:"servings"`
@@ -64,6 +68,7 @@ type UpdateRequest struct {
 	Title       *string                 `json:"title"`
 	Description *string                 `json:"description"`
 	SourceURL   *string                 `json:"sourceUrl"`
+	SourceURLs  []string                `json:"sourceUrls"`
 	PrepTime    *int                    `json:"prepTime"`
 	CookTime    *int                    `json:"cookTime"`
 	Servings    *int                    `json:"servings"`
@@ -116,7 +121,7 @@ func (h *Handler) Create(c *gin.Context) {
 		c.Request.Context(), instanceID, userID,
 		req.Title, req.Description, req.SourceURL,
 		req.PrepTime, req.CookTime, req.Servings,
-		req.ImageURL, ingredients, steps, req.Tags,
+		req.ImageURL, ingredients, steps, req.Tags, req.SourceURLs,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -211,6 +216,10 @@ func (h *Handler) Update(c *gin.Context) {
 	if req.SourceURL != nil {
 		sourceUrl = *req.SourceURL
 	}
+	sourceURLs := []string(existing.SourceURLs)
+	if req.SourceURLs != nil {
+		sourceURLs = req.SourceURLs
+	}
 	prepTime := existing.PrepTime
 	if req.PrepTime != nil {
 		prepTime = *req.PrepTime
@@ -288,7 +297,7 @@ func (h *Handler) Update(c *gin.Context) {
 		c.Request.Context(), instanceID, recipeID, userID,
 		title, description, sourceUrl,
 		prepTime, cookTime, servings,
-		imageURL, ingredients, steps, tagNames,
+		imageURL, ingredients, steps, tagNames, sourceURLs,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -334,7 +343,8 @@ func (h *Handler) Generate(c *gin.Context) {
 	}
 
 	var req struct {
-		Prompt string `json:"prompt" binding:"required"`
+		Prompt     string `json:"prompt" binding:"required"`
+		Simplicity int    `json:"simplicity"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -343,7 +353,7 @@ func (h *Handler) Generate(c *gin.Context) {
 
 	_ = instanceID // validated by RequireInstanceMembership middleware
 
-	generated, err := h.service.GenerateRecipe(c.Request.Context(), userID, req.Prompt)
+	generated, err := h.service.GenerateRecipe(c.Request.Context(), userID, req.Prompt, req.Simplicity)
 	if err != nil {
 		if errors.Is(err, services.ErrRateLimiterUnavailable) {
 			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "AI service unavailable"})
@@ -366,4 +376,123 @@ func (h *Handler) Generate(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": generated})
+}
+
+func (h *Handler) ListVersions(c *gin.Context) {
+	instanceID, ok := middleware.GetInstanceID(c)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid instance"})
+		return
+	}
+
+	recipeID, ok := parseRecipeID(c)
+	if !ok {
+		return
+	}
+
+	versions, err := h.service.ListVersions(c.Request.Context(), instanceID, recipeID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": versions})
+}
+
+func (h *Handler) Remix(c *gin.Context) {
+	instanceID, ok := middleware.GetInstanceID(c)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid instance"})
+		return
+	}
+
+	recipeID, ok := parseRecipeID(c)
+	if !ok {
+		return
+	}
+
+	userID, ok := middleware.GetInternalUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not identified"})
+		return
+	}
+
+	var req struct {
+		Prompt     string `json:"prompt" binding:"required"`
+		Simplicity int    `json:"simplicity"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	recipe, err := h.service.RemixRecipe(c.Request.Context(), instanceID, recipeID, userID, req.Prompt, req.Simplicity)
+	if err != nil {
+		writeRecipeAIError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": recipe})
+}
+
+func (h *Handler) RestoreVersion(c *gin.Context) {
+	instanceID, ok := middleware.GetInstanceID(c)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid instance"})
+		return
+	}
+
+	recipeID, ok := parseRecipeID(c)
+	if !ok {
+		return
+	}
+
+	versionID, err := uuid.Parse(c.Param("version_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid version id"})
+		return
+	}
+
+	userID, ok := middleware.GetInternalUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not identified"})
+		return
+	}
+
+	recipe, err := h.service.RestoreVersion(c.Request.Context(), instanceID, recipeID, versionID, userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": recipe})
+}
+
+func parseRecipeID(c *gin.Context) (uuid.UUID, bool) {
+	recipeID, err := uuid.Parse(c.Param("recipe_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid recipe id"})
+		return uuid.Nil, false
+	}
+	return recipeID, true
+}
+
+func writeRecipeAIError(c *gin.Context, err error) {
+	if errors.Is(err, services.ErrRateLimiterUnavailable) {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "AI service unavailable"})
+		return
+	}
+	if errors.Is(err, services.ErrDailyLimitExceeded) {
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": "daily AI request limit reached"})
+		return
+	}
+	if errors.Is(err, services.ErrOpenAIUpstream) {
+		c.JSON(http.StatusBadGateway, gin.H{"error": "AI upstream service error"})
+		return
+	}
+	if errors.Is(err, services.ErrGeneratedRecipeInvalid) {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 }

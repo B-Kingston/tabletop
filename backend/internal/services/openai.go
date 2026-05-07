@@ -76,6 +76,45 @@ type OpenAIResponse struct {
 	} `json:"usage"`
 }
 
+type OpenAIResponsesRequest struct {
+	Model        string                  `json:"model"`
+	Instructions string                  `json:"instructions"`
+	Input        string                  `json:"input"`
+	Reasoning    OpenAIReasoningSpec     `json:"reasoning,omitempty"`
+	Tools        []map[string]string     `json:"tools"`
+	ToolChoice   string                  `json:"tool_choice"`
+	Include      []string                `json:"include,omitempty"`
+	Text         OpenAIResponsesTextSpec `json:"text"`
+}
+
+type OpenAIReasoningSpec struct {
+	Effort string `json:"effort"`
+}
+
+type OpenAIResponsesTextSpec struct {
+	Format map[string]any `json:"format"`
+}
+
+type OpenAIResponsesResponse struct {
+	ID     string `json:"id"`
+	Output []struct {
+		Type   string `json:"type"`
+		Status string `json:"status,omitempty"`
+		Action struct {
+			Type    string `json:"type,omitempty"`
+			Sources []struct {
+				URL   string `json:"url"`
+				Title string `json:"title,omitempty"`
+			} `json:"sources,omitempty"`
+		} `json:"action,omitempty"`
+		Content []struct {
+			Type string `json:"type"`
+			Text string `json:"text"`
+		} `json:"content,omitempty"`
+	} `json:"output"`
+	OutputText string `json:"output_text,omitempty"`
+}
+
 type OpenAIStreamChunk struct {
 	ID      string `json:"id"`
 	Choices []struct {
@@ -86,13 +125,20 @@ type OpenAIStreamChunk struct {
 	} `json:"choices"`
 }
 
+type GeneratedRecipeSource struct {
+	Title string `json:"title"`
+	URL   string `json:"url"`
+}
+
 // GeneratedRecipe is a structured recipe produced by the AI.
 type GeneratedRecipe struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	PrepTime    int    `json:"prepTime"`
-	CookTime    int    `json:"cookTime"`
-	Servings    int    `json:"servings"`
+	Title       string                  `json:"title"`
+	Description string                  `json:"description"`
+	PrepTime    int                     `json:"prepTime"`
+	CookTime    int                     `json:"cookTime"`
+	Servings    int                     `json:"servings"`
+	SourceURLs  []string                `json:"sourceUrls"`
+	Sources     []GeneratedRecipeSource `json:"sources"`
 	Ingredients []struct {
 		Name     string `json:"name"`
 		Quantity string `json:"quantity"`
@@ -108,7 +154,7 @@ type GeneratedRecipe struct {
 	Tags []string `json:"tags"`
 }
 
-const RecipeSystemPrompt = `You are a helpful recipe assistant. When asked to create or suggest a recipe, respond with ONLY valid JSON and nothing else. No markdown formatting, no code fences, no explanation outside the JSON object.
+const RecipeSystemPrompt = `You are a recipe research assistant. Use web search before generating a recipe. Prefer credible recipe sources and synthesize practical guidance without copying source text. Return ONLY valid JSON and nothing else. No markdown formatting, no code fences, no explanation outside the JSON object.
 
 Output a single JSON object matching this schema exactly:
 {
@@ -117,12 +163,22 @@ Output a single JSON object matching this schema exactly:
   "prepTime": number (minutes),
   "cookTime": number (minutes),
   "servings": number,
+  "sourceUrls": ["https://..."],
   "ingredients": [{"name": "string", "quantity": "string", "unit": "string", "optional": false}],
   "steps": [{"orderIndex": number, "title": "string (optional)", "content": "string (markdown)", "durationMin": number or null}],
   "tags": ["string"]
 }
 
-Always include prepTime, cookTime, at least 2 steps, and 1-4 tags. Use clear, concise markdown for step content.`
+Always include prepTime, cookTime, at least 2 steps, 1-4 tags, and at least one source URL used by web search. Use clear, concise markdown for step content.
+
+Recipe realism checklist before returning JSON:
+- Every step that involves heating, simmering, baking, roasting, frying, sauteing, resting, chilling, or reducing must include both a duration and a doneness cue in the step content.
+- Use durationMin for active or waiting time in each step whenever a cook would naturally set a timer.
+- Make total cookTime consistent with the step durations and realistic for the technique, ingredient sizes, and appliance temperatures.
+- Ensure each ingredient is used in the instructions, and no required ingredient appears in the steps without being listed.
+- Include practical cues for heat level, texture, color, internal doneness, or sauce consistency where timing alone is not enough.
+- If a shortcut ingredient is used, such as shelf-stable gnocchi or fresh pasta, explain whether it is boiled first or cooked directly in the pan and how long it needs in sauce.
+- Never leave a cooking action at "cook until done" without saying approximately how long and what "done" looks like.`
 
 func NewOpenAIService(apiKey string, rateLimiter RateLimiter, dailyLimit int, production bool) *OpenAIService {
 	return &OpenAIService{
@@ -204,17 +260,21 @@ func (s *OpenAIService) ChatCompletion(ctx context.Context, messages []OpenAIMes
 }
 
 func (s *OpenAIService) GenerateRecipe(ctx context.Context, prompt string) (*GeneratedRecipe, error) {
-	messages := []OpenAIMessage{
-		{Role: "system", Content: RecipeSystemPrompt},
-		{Role: "user", Content: prompt},
-	}
-
-	reqBody := OpenAIRequest{
-		Model:          s.model,
-		Messages:       messages,
-		Temperature:    0.7,
-		Stream:         false,
-		ResponseFormat: map[string]string{"type": "json_object"},
+	reqBody := OpenAIResponsesRequest{
+		Model:        s.model,
+		Instructions: RecipeSystemPrompt,
+		Input:        prompt,
+		Reasoning: OpenAIReasoningSpec{
+			Effort: "medium",
+		},
+		Tools: []map[string]string{
+			{"type": "web_search", "search_context_size": "medium"},
+		},
+		ToolChoice: "auto",
+		Include:    []string{"web_search_call.action.sources"},
+		Text: OpenAIResponsesTextSpec{
+			Format: generatedRecipeJSONSchema(),
+		},
 	}
 
 	body, err := json.Marshal(reqBody)
@@ -222,7 +282,7 @@ func (s *OpenAIService) GenerateRecipe(ctx context.Context, prompt string) (*Gen
 		return nil, fmt.Errorf("%w: failed to marshal request: %w", ErrOpenAIUpstream, err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.baseURL+"/chat/completions", strings.NewReader(string(body)))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.baseURL+"/responses", strings.NewReader(string(body)))
 	if err != nil {
 		return nil, fmt.Errorf("%w: failed to create request: %w", ErrOpenAIUpstream, err)
 	}
@@ -240,16 +300,36 @@ func (s *OpenAIService) GenerateRecipe(ctx context.Context, prompt string) (*Gen
 		return nil, fmt.Errorf("%w: OpenAI returned %d: %s", ErrOpenAIUpstream, resp.StatusCode, string(respBody))
 	}
 
-	var result OpenAIResponse
+	var result OpenAIResponsesResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("%w: failed to decode response: %w", ErrOpenAIUpstream, err)
 	}
 
-	if len(result.Choices) == 0 {
-		return nil, fmt.Errorf("%w: openai returned no choices", ErrOpenAIUpstream)
+	raw := strings.TrimSpace(result.OutputText)
+	var searchedSourceURLs []string
+	var searchedSources []GeneratedRecipeSource
+	for _, item := range result.Output {
+		if item.Type == "web_search_call" && item.Status != "failed" {
+			for _, source := range item.Action.Sources {
+				if source.URL != "" {
+					searchedSourceURLs = append(searchedSourceURLs, source.URL)
+					searchedSources = append(searchedSources, GeneratedRecipeSource{
+						Title: source.Title,
+						URL:   source.URL,
+					})
+				}
+			}
+		}
+		if raw == "" && item.Type == "message" {
+			for _, content := range item.Content {
+				if content.Type == "output_text" && strings.TrimSpace(content.Text) != "" {
+					raw = strings.TrimSpace(content.Text)
+					break
+				}
+			}
+		}
 	}
 
-	raw := strings.TrimSpace(result.Choices[0].Message.Content)
 	if raw == "" {
 		return nil, fmt.Errorf("%w: openai returned empty content", ErrOpenAIUpstream)
 	}
@@ -260,6 +340,16 @@ func (s *OpenAIService) GenerateRecipe(ctx context.Context, prompt string) (*Gen
 	var recipe GeneratedRecipe
 	if err := json.Unmarshal([]byte(raw), &recipe); err != nil {
 		return nil, fmt.Errorf("%w: failed to parse generated recipe: %w", ErrGeneratedRecipeInvalid, err)
+	}
+
+	if len(searchedSourceURLs) == 0 {
+		return nil, fmt.Errorf("%w: generated recipe did not use web search", ErrGeneratedRecipeInvalid)
+	}
+	if len(recipe.SourceURLs) == 0 {
+		recipe.SourceURLs = searchedSourceURLs
+	}
+	if len(recipe.Sources) == 0 {
+		recipe.Sources = searchedSources
 	}
 
 	// Validate required fields
@@ -277,6 +367,75 @@ func (s *OpenAIService) GenerateRecipe(ctx context.Context, prompt string) (*Gen
 	}
 
 	return &recipe, nil
+}
+
+func generatedRecipeJSONSchema() map[string]any {
+	ingredientSchema := map[string]any{
+		"type":                 "object",
+		"additionalProperties": false,
+		"required":             []string{"name", "quantity", "unit", "optional"},
+		"properties": map[string]any{
+			"name":     map[string]string{"type": "string"},
+			"quantity": map[string]string{"type": "string"},
+			"unit":     map[string]string{"type": "string"},
+			"optional": map[string]string{"type": "boolean"},
+		},
+	}
+	stepSchema := map[string]any{
+		"type":                 "object",
+		"additionalProperties": false,
+		"required":             []string{"orderIndex", "title", "content", "durationMin"},
+		"properties": map[string]any{
+			"orderIndex":  map[string]string{"type": "integer"},
+			"title":       map[string]string{"type": "string"},
+			"content":     map[string]string{"type": "string"},
+			"durationMin": map[string]any{"type": []string{"integer", "null"}},
+		},
+	}
+
+	return map[string]any{
+		"type":   "json_schema",
+		"name":   "generated_recipe",
+		"strict": true,
+		"schema": map[string]any{
+			"type":                 "object",
+			"additionalProperties": false,
+			"required": []string{
+				"title",
+				"description",
+				"prepTime",
+				"cookTime",
+				"servings",
+				"sourceUrls",
+				"ingredients",
+				"steps",
+				"tags",
+			},
+			"properties": map[string]any{
+				"title":       map[string]string{"type": "string"},
+				"description": map[string]string{"type": "string"},
+				"prepTime":    map[string]string{"type": "integer"},
+				"cookTime":    map[string]string{"type": "integer"},
+				"servings":    map[string]string{"type": "integer"},
+				"sourceUrls": map[string]any{
+					"type":  "array",
+					"items": map[string]string{"type": "string"},
+				},
+				"ingredients": map[string]any{
+					"type":  "array",
+					"items": ingredientSchema,
+				},
+				"steps": map[string]any{
+					"type":  "array",
+					"items": stepSchema,
+				},
+				"tags": map[string]any{
+					"type":  "array",
+					"items": map[string]string{"type": "string"},
+				},
+			},
+		},
+	}
 }
 
 // stripMarkdownFences removes leading and trailing triple-backtick fences

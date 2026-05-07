@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -69,6 +70,110 @@ func TestOpenAIService_ChatCompletion_ErrorResponse(t *testing.T) {
 	})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "429")
+}
+
+func TestOpenAIService_GenerateRecipe_UsesResponsesWebSearch(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/responses", r.URL.Path)
+		assert.Equal(t, "Bearer test-key", r.Header.Get("Authorization"))
+
+		var req map[string]any
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
+		assert.Equal(t, "gpt-5.4-mini-2026-03-17", req["model"])
+		assert.Contains(t, req["instructions"], "Use web search")
+		assert.Contains(t, req["instructions"], "Recipe realism checklist")
+		assert.Contains(t, req["instructions"], "heating, simmering, baking, roasting, frying, sauteing, resting, chilling, or reducing")
+		assert.Contains(t, req["instructions"], "duration and a doneness cue")
+		assert.Equal(t, "weeknight pasta", req["input"])
+
+		reasoning, ok := req["reasoning"].(map[string]any)
+		require.True(t, ok)
+		assert.Equal(t, "medium", reasoning["effort"])
+
+		tools, ok := req["tools"].([]any)
+		require.True(t, ok)
+		require.Len(t, tools, 1)
+		tool, ok := tools[0].(map[string]any)
+		require.True(t, ok)
+		assert.Equal(t, "web_search", tool["type"])
+
+		text, ok := req["text"].(map[string]any)
+		require.True(t, ok)
+		format, ok := text["format"].(map[string]any)
+		require.True(t, ok)
+		assert.Equal(t, "json_schema", format["type"])
+		assert.Equal(t, true, format["strict"])
+
+		json.NewEncoder(w).Encode(map[string]any{
+			"id": "resp-123",
+			"output": []any{
+				map[string]any{
+					"type":   "web_search_call",
+					"id":     "ws-123",
+					"status": "completed",
+					"action": map[string]any{
+						"type": "search",
+						"sources": []any{
+							map[string]any{"url": "https://example.com/pasta", "title": "Weeknight Pasta"},
+							map[string]any{"url": "https://example.com/tomato-sauce", "title": "Tomato Sauce Guide"},
+						},
+					},
+				},
+				map[string]any{
+					"type": "message",
+					"content": []any{
+						map[string]any{
+							"type": "output_text",
+							"text": `{"title":"Weeknight Pasta","description":"Fast tomato pasta inspired by searched sources.","prepTime":10,"cookTime":20,"servings":4,"sourceUrls":["https://example.com/pasta"],"ingredients":[{"name":"Pasta","quantity":"400","unit":"g","optional":false}],"steps":[{"orderIndex":1,"title":"Boil pasta","content":"Cook pasta in salted water.","durationMin":10},{"orderIndex":2,"title":"Sauce","content":"Toss with sauce.","durationMin":10}],"tags":["pasta","weeknight"]}`,
+						},
+					},
+				},
+			},
+		})
+	}))
+	defer server.Close()
+
+	svc := NewOpenAIService("test-key", nil, 20, false)
+	svc.baseURL = server.URL
+
+	recipe, err := svc.GenerateRecipe(context.Background(), "weeknight pasta")
+
+	require.NoError(t, err)
+	assert.Equal(t, "Weeknight Pasta", recipe.Title)
+	assert.Equal(t, []string{"https://example.com/pasta"}, recipe.SourceURLs)
+	assert.Equal(t, []GeneratedRecipeSource{
+		{Title: "Weeknight Pasta", URL: "https://example.com/pasta"},
+		{Title: "Tomato Sauce Guide", URL: "https://example.com/tomato-sauce"},
+	}, recipe.Sources)
+}
+
+func TestOpenAIService_GenerateRecipe_RejectsResponseWithoutWebSearch(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{
+			"id": "resp-123",
+			"output": []any{
+				map[string]any{
+					"type": "message",
+					"content": []any{
+						map[string]any{
+							"type": "output_text",
+							"text": `{"title":"Imagined Pasta","description":"No sources.","prepTime":10,"cookTime":20,"servings":4,"sourceUrls":[],"ingredients":[{"name":"Pasta","quantity":"400","unit":"g","optional":false}],"steps":[{"orderIndex":1,"title":"Boil pasta","content":"Cook pasta.","durationMin":10},{"orderIndex":2,"title":"Sauce","content":"Toss pasta.","durationMin":10}],"tags":["pasta"]}`,
+						},
+					},
+				},
+			},
+		})
+	}))
+	defer server.Close()
+
+	svc := NewOpenAIService("test-key", nil, 20, false)
+	svc.baseURL = server.URL
+
+	_, err := svc.GenerateRecipe(context.Background(), "weeknight pasta")
+
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, ErrGeneratedRecipeInvalid))
+	assert.Contains(t, err.Error(), "web search")
 }
 
 func TestOpenAIService_ChatCompletionStream(t *testing.T) {
@@ -179,10 +284,10 @@ func TestOpenAIService_CheckRateLimit_RedisError_Production(t *testing.T) {
 }
 
 type mockRateLimiter struct {
-	incrVal     int64
-	incrErr     error
-	expireVal   bool
-	expireErr   error
+	incrVal      int64
+	incrErr      error
+	expireVal    bool
+	expireErr    error
 	expireCalled bool
 }
 

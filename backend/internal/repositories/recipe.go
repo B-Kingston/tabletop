@@ -20,6 +20,11 @@ type RecipeRepository interface {
 	ReplaceSteps(ctx context.Context, recipeID uuid.UUID, steps []models.RecipeStep) error
 	ReplaceTags(ctx context.Context, recipeID uuid.UUID, tags []models.RecipeTag) error
 	FindOrCreateTag(ctx context.Context, name string) (*models.RecipeTag, error)
+	CreateVersion(ctx context.Context, version *models.RecipeVersion) error
+	ListVersions(ctx context.Context, instanceID, recipeID uuid.UUID) ([]models.RecipeVersion, error)
+	GetVersion(ctx context.Context, instanceID, recipeID, versionID uuid.UUID) (*models.RecipeVersion, error)
+	NextVersionNumber(ctx context.Context, recipeID uuid.UUID) (int, error)
+	MarkVersionCurrent(ctx context.Context, recipeID, versionID uuid.UUID) error
 }
 
 type recipeRepository struct {
@@ -136,4 +141,74 @@ func (r *recipeRepository) FindOrCreateTag(ctx context.Context, name string) (*m
 		return nil, fmt.Errorf("failed to find or create tag: %w", err)
 	}
 	return &tag, nil
+}
+
+func (r *recipeRepository) CreateVersion(ctx context.Context, version *models.RecipeVersion) error {
+	if version.IsCurrent {
+		if err := r.db.WithContext(ctx).
+			Model(&models.RecipeVersion{}).
+			Where("recipe_id = ?", version.RecipeID).
+			Update("is_current", false).Error; err != nil {
+			return fmt.Errorf("failed to clear current recipe version: %w", err)
+		}
+	}
+
+	if err := r.db.WithContext(ctx).Create(version).Error; err != nil {
+		return fmt.Errorf("failed to create recipe version: %w", err)
+	}
+	return nil
+}
+
+func (r *recipeRepository) ListVersions(ctx context.Context, instanceID, recipeID uuid.UUID) ([]models.RecipeVersion, error) {
+	var versions []models.RecipeVersion
+	if err := r.db.WithContext(ctx).
+		Where("instance_id = ? AND recipe_id = ?", instanceID, recipeID).
+		Preload("CreatedBy").
+		Order("version_number DESC").
+		Find(&versions).Error; err != nil {
+		return nil, fmt.Errorf("failed to list recipe versions: %w", err)
+	}
+	return versions, nil
+}
+
+func (r *recipeRepository) GetVersion(ctx context.Context, instanceID, recipeID, versionID uuid.UUID) (*models.RecipeVersion, error) {
+	var version models.RecipeVersion
+	if err := r.db.WithContext(ctx).
+		Where("instance_id = ? AND recipe_id = ? AND id = ?", instanceID, recipeID, versionID).
+		Preload("CreatedBy").
+		First(&version).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get recipe version: %w", err)
+	}
+	return &version, nil
+}
+
+func (r *recipeRepository) NextVersionNumber(ctx context.Context, recipeID uuid.UUID) (int, error) {
+	var maxVersion int
+	if err := r.db.WithContext(ctx).
+		Model(&models.RecipeVersion{}).
+		Where("recipe_id = ?", recipeID).
+		Select("COALESCE(MAX(version_number), 0)").
+		Scan(&maxVersion).Error; err != nil {
+		return 0, fmt.Errorf("failed to get next recipe version number: %w", err)
+	}
+	return maxVersion + 1, nil
+}
+
+func (r *recipeRepository) MarkVersionCurrent(ctx context.Context, recipeID, versionID uuid.UUID) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&models.RecipeVersion{}).
+			Where("recipe_id = ?", recipeID).
+			Update("is_current", false).Error; err != nil {
+			return fmt.Errorf("failed to clear current recipe version: %w", err)
+		}
+		if err := tx.Model(&models.RecipeVersion{}).
+			Where("recipe_id = ? AND id = ?", recipeID, versionID).
+			Update("is_current", true).Error; err != nil {
+			return fmt.Errorf("failed to mark current recipe version: %w", err)
+		}
+		return nil
+	})
 }

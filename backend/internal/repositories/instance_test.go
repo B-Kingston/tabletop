@@ -19,6 +19,7 @@ func setupRepoTestDB(t *testing.T) *gorm.DB {
 	err = db.AutoMigrate(
 		&models.User{}, &models.Instance{}, &models.InstanceMembership{},
 		&models.MediaItem{}, &models.Wine{}, &models.Recipe{},
+		&models.RecipeVersion{},
 		&models.Ingredient{}, &models.RecipeStep{}, &models.RecipeTag{},
 		&models.OMDBCache{},
 	)

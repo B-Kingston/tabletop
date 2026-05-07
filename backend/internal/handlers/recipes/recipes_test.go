@@ -27,6 +27,7 @@ func setupRecipeHandlerTest(t *testing.T) (*gin.Engine, *Handler, uuid.UUID, uui
 	require.NoError(t, db.AutoMigrate(
 		&models.User{}, &models.Instance{}, &models.InstanceMembership{},
 		&models.Recipe{}, &models.Ingredient{}, &models.RecipeStep{}, &models.RecipeTag{},
+		&models.RecipeVersion{},
 	))
 
 	user := models.User{ClerkID: "recipe_handler_user", Email: "test@test.com"}
