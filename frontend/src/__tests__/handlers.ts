@@ -210,6 +210,88 @@ export const recipeHandlers = [
       error: null,
     })
   }),
+  http.get(`${BASE}/instances/:instanceId/recipes/:recipeId/versions`, ({ params }) => {
+    return HttpResponse.json({
+      data: [
+        {
+          id: 'version-2',
+          instanceId: params.instanceId,
+          recipeId: params.recipeId,
+          versionNumber: 2,
+          remixPrompt: 'make it vegetarian',
+          snapshot: { title: 'Vegetarian Test Recipe' },
+          createdById: 'user-1',
+          isCurrent: true,
+          createdAt: '2024-01-02T00:00:00Z',
+        },
+        {
+          id: 'version-1',
+          instanceId: params.instanceId,
+          recipeId: params.recipeId,
+          versionNumber: 1,
+          remixPrompt: '',
+          snapshot: { title: 'Test Recipe' },
+          createdById: 'user-1',
+          isCurrent: false,
+          createdAt: '2024-01-01T00:00:00Z',
+        },
+      ],
+      error: null,
+    })
+  }),
+  http.post(`${BASE}/instances/:instanceId/recipes/:recipeId/remix`, async ({ params, request }) => {
+    const body = await request.json() as { prompt?: string }
+    return HttpResponse.json({
+      data: {
+        id: params.recipeId,
+        instanceId: params.instanceId,
+        title: body.prompt ? 'Vegetarian Test Recipe' : 'Test Recipe',
+        description: 'A remixed recipe',
+        sourceUrl: 'https://example.com/remix',
+        sourceUrls: ['https://example.com/remix'],
+        prepTime: 12,
+        cookTime: 18,
+        servings: 4,
+        imageUrl: '',
+        rating: null,
+        review: '',
+        createdById: 'user-1',
+        updatedById: 'user-1',
+        ingredients: [],
+        steps: [],
+        tags: [],
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-02T00:00:00Z',
+      },
+      error: null,
+    })
+  }),
+  http.post(`${BASE}/instances/:instanceId/recipes/:recipeId/versions/:versionId/restore`, ({ params }) => {
+    return HttpResponse.json({
+      data: {
+        id: params.recipeId,
+        instanceId: params.instanceId,
+        title: 'Test Recipe',
+        description: 'A restored recipe',
+        sourceUrl: '',
+        sourceUrls: [],
+        prepTime: 10,
+        cookTime: 20,
+        servings: 4,
+        imageUrl: '',
+        rating: null,
+        review: '',
+        createdById: 'user-1',
+        updatedById: 'user-1',
+        ingredients: [],
+        steps: [],
+        tags: [],
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-02T00:00:00Z',
+      },
+      error: null,
+    })
+  }),
   http.get(`${BASE}/instances/:instanceId/recipes/:recipeId`, ({ params }) => {
     return HttpResponse.json({
       data: {
@@ -217,6 +299,8 @@ export const recipeHandlers = [
         instanceId: 'inst-1',
         title: 'Test Recipe',
         description: 'A test recipe',
+        sourceUrl: 'https://example.com/recipe',
+        sourceUrls: ['https://example.com/recipe', 'https://minimalistbaker.com/noodles'],
         prepTime: 10,
         cookTime: 20,
         servings: 4,
@@ -247,6 +331,11 @@ export const recipeHandlers = [
         prepTime: 10,
         cookTime: 15,
         servings: 2,
+        sourceUrls: ['https://example.com/lemon-pasta'],
+        sources: [
+          { title: 'Lemon Pasta Method', url: 'https://example.com/lemon-pasta' },
+          { title: 'Pasta Water Tips', url: 'https://example.com/pasta-water' },
+        ],
         ingredients: [
           { name: 'spaghetti', quantity: '200', unit: 'g', optional: false },
           { name: 'lemon', quantity: '1', unit: '', optional: false },
@@ -268,6 +357,8 @@ export const recipeHandlers = [
         instanceId: 'inst-1',
         title: body.title,
         description: body.description ?? '',
+        sourceUrl: body.sourceUrl ?? '',
+        sourceUrls: body.sourceUrls ?? [],
         prepTime: body.prepTime ?? 0,
         cookTime: body.cookTime ?? 0,
         servings: body.servings ?? 0,

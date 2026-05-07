@@ -45,6 +45,7 @@ export interface Recipe {
   title: string
   description: string
   sourceUrl: string
+  sourceUrls?: string[]
   prepTime: number
   cookTime: number
   servings: number
@@ -58,6 +59,33 @@ export interface Recipe {
   ingredients?: Ingredient[]
   steps?: RecipeStep[]
   tags?: RecipeTag[]
+  createdBy?: User
+}
+
+export interface RecipeVersionSnapshot {
+  title: string
+  description: string
+  sourceUrl: string
+  sourceUrls?: string[]
+  prepTime: number
+  cookTime: number
+  servings: number
+  imageUrl: string
+  ingredients: { name: string; quantity: string; unit: string; optional: boolean }[]
+  steps: { orderIndex: number; title: string; content: string; durationMin: number | null }[]
+  tags: string[]
+}
+
+export interface RecipeVersion {
+  id: string
+  instanceId: string
+  recipeId: string
+  versionNumber: number
+  remixPrompt: string
+  snapshot: RecipeVersionSnapshot
+  createdById: string
+  isCurrent: boolean
+  createdAt: string
   createdBy?: User
 }
 

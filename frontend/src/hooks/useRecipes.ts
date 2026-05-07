@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import type { Recipe } from '@/types/models'
+import type { Recipe, RecipeVersion } from '@/types/models'
 
 interface RecipeInput {
   title: string
   description?: string
   sourceUrl?: string
+  sourceUrls?: string[]
   prepTime?: number
   cookTime?: number
   servings?: number
@@ -39,6 +40,19 @@ export function useRecipe(instanceId: string, recipeId: string) {
   })
 }
 
+export function useRecipeVersions(instanceId: string, recipeId: string) {
+  return useQuery({
+    queryKey: ['recipes', instanceId, recipeId, 'versions'],
+    queryFn: async () => {
+      const { data } = await api.get<{ data: RecipeVersion[] }>(
+        `/instances/${instanceId}/recipes/${recipeId}/versions`
+      )
+      return data.data ?? []
+    },
+    enabled: !!instanceId && !!recipeId,
+  })
+}
+
 export function useCreateRecipe(instanceId: string) {
   const qc = useQueryClient()
   return useMutation({
@@ -61,6 +75,41 @@ export function useUpdateRecipe(instanceId: string) {
       return data.data
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['recipes', instanceId] }),
+  })
+}
+
+export function useRemixRecipe(instanceId: string, recipeId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: { prompt: string; simplicity?: number }) => {
+      const { data } = await api.post<{ data: Recipe }>(
+        `/instances/${instanceId}/recipes/${recipeId}/remix`,
+        input
+      )
+      return data.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['recipes', instanceId] })
+      qc.invalidateQueries({ queryKey: ['recipes', instanceId, recipeId] })
+      qc.invalidateQueries({ queryKey: ['recipes', instanceId, recipeId, 'versions'] })
+    },
+  })
+}
+
+export function useRestoreRecipeVersion(instanceId: string, recipeId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (versionId: string) => {
+      const { data } = await api.post<{ data: Recipe }>(
+        `/instances/${instanceId}/recipes/${recipeId}/versions/${versionId}/restore`
+      )
+      return data.data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['recipes', instanceId] })
+      qc.invalidateQueries({ queryKey: ['recipes', instanceId, recipeId] })
+      qc.invalidateQueries({ queryKey: ['recipes', instanceId, recipeId, 'versions'] })
+    },
   })
 }
 

@@ -4,11 +4,17 @@ import { api } from '@/lib/api'
 import { useCreateRecipe } from '@/hooks/useRecipes'
 import { Button } from '@/components/ui/Button'
 import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter } from '@/components/ui/Dialog'
+import { getRecipeSourceLinks } from '@/lib/sourceUtils'
 
 interface RecipeGeneratorModalProps {
   open: boolean
   onClose: () => void
   instanceId: string
+}
+
+interface GeneratedRecipeSource {
+  title?: string
+  url: string
 }
 
 interface GeneratedRecipe {
@@ -17,6 +23,8 @@ interface GeneratedRecipe {
   prepTime: number
   cookTime: number
   servings: number
+  sourceUrls?: string[]
+  sources?: GeneratedRecipeSource[]
   ingredients: { name: string; quantity: string; unit: string; optional?: boolean }[]
   steps: { content: string; durationMin: number | null }[]
   tags: string[]
@@ -24,6 +32,7 @@ interface GeneratedRecipe {
 
 export function RecipeGeneratorModal({ open, onClose, instanceId }: RecipeGeneratorModalProps) {
   const [prompt, setPrompt] = useState('')
+  const [simplicity, setSimplicity] = useState(3)
   const [generating, setGenerating] = useState(false)
   const [generated, setGenerated] = useState<GeneratedRecipe | null>(null)
   const [error, setError] = useState('')
@@ -40,7 +49,7 @@ export function RecipeGeneratorModal({ open, onClose, instanceId }: RecipeGenera
     try {
       const { data } = await api.post<{ data: GeneratedRecipe }>(
         `/instances/${instanceId}/recipes/generate`,
-        { prompt }
+        { prompt, simplicity }
       )
       setGenerated(data.data)
     } catch (err: unknown) {
@@ -69,6 +78,8 @@ export function RecipeGeneratorModal({ open, onClose, instanceId }: RecipeGenera
         prepTime: generated.prepTime,
         cookTime: generated.cookTime,
         servings: generated.servings,
+        sourceUrl: generated.sourceUrls?.[0] ?? '',
+        sourceUrls: sources.map((source) => source.url),
         ingredients: generated.ingredients.map((i) => ({
           name: i.name,
           quantity: i.quantity,
@@ -87,6 +98,7 @@ export function RecipeGeneratorModal({ open, onClose, instanceId }: RecipeGenera
           onClose()
           setGenerated(null)
           setPrompt('')
+          setSimplicity(3)
         },
       }
     )
@@ -96,11 +108,21 @@ export function RecipeGeneratorModal({ open, onClose, instanceId }: RecipeGenera
     onClose()
     setGenerated(null)
     setPrompt('')
+    setSimplicity(3)
     setError('')
   }
 
+  const sources: GeneratedRecipeSource[] = generated
+    ? generated.sources?.length
+      ? generated.sources
+      : (generated.sourceUrls?.map((url) => ({ url })) ?? [])
+    : []
+  const sourceLinks = getRecipeSourceLinks(sources.map((source) => source.url))
+  const visibleSourceLinks = sourceLinks.slice(0, 6)
+  const hiddenSourceCount = Math.max(sourceLinks.length - visibleSourceLinks.length, 0)
+
   return (
-    <Dialog open={open} onClose={handleClose} className="max-w-2xl">
+    <Dialog open={open} onClose={handleClose} className="flex max-h-[85vh] max-w-2xl flex-col overflow-hidden">
       <DialogHeader>
         <DialogTitle>
           <span className="flex items-center gap-2">
@@ -126,6 +148,31 @@ export function RecipeGeneratorModal({ open, onClose, instanceId }: RecipeGenera
               />
             </div>
 
+            <div className="rounded-2xl bg-surface-secondary px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <label htmlFor="recipe-simplicity" className="text-sm font-medium text-text-secondary">
+                  Recipe simplicity
+                </label>
+                <span className="rounded-full bg-surface px-2 py-0.5 text-xs font-semibold text-text">
+                  {simplicity}/5
+                </span>
+              </div>
+              <input
+                id="recipe-simplicity"
+                type="range"
+                min={1}
+                max={5}
+                step={1}
+                value={simplicity}
+                onChange={(e) => setSimplicity(Number(e.target.value))}
+                className="mt-3 w-full accent-accent"
+              />
+              <div className="mt-1 flex justify-between text-xs text-muted">
+                <span>Quick</span>
+                <span>Ambitious</span>
+              </div>
+            </div>
+
             {error && <p className="text-sm text-red-600">{error}</p>}
 
             {generating && (
@@ -140,9 +187,43 @@ export function RecipeGeneratorModal({ open, onClose, instanceId }: RecipeGenera
             </Button>
           </form>
         ) : (
-          <div className="space-y-4">
+          <div className="max-h-[calc(85vh-9rem)] space-y-4 overflow-y-auto pr-1">
             <div>
-              <h3 className="text-lg font-semibold text-text">{generated.title}</h3>
+              <div className="flex items-start justify-between gap-3">
+                <h3 className="text-lg font-semibold text-text">{generated.title}</h3>
+                {sourceLinks.length > 0 && (
+                  <div
+                    aria-label={`${sourceLinks.length} sources searched`}
+                    className="flex shrink-0 items-center rounded-full border border-border bg-surface-secondary px-2 py-1"
+                  >
+                    {visibleSourceLinks.map((source) => (
+                      <a
+                        key={source.url}
+                        href={source.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={source.host}
+                        className="-ml-1 first:ml-0 flex h-7 w-7 items-center justify-center rounded-full border border-surface bg-surface shadow-soft transition hover:z-10 hover:-translate-y-0.5"
+                      >
+                        <img
+                          src={source.faviconUrl}
+                          alt=""
+                          className="h-4 w-4"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                          }}
+                        />
+                        <span className="sr-only">{source.host}</span>
+                      </a>
+                    ))}
+                    {hiddenSourceCount > 0 && (
+                      <span className="-ml-1 flex h-7 min-w-7 items-center justify-center rounded-full border border-surface bg-bg px-1.5 text-xs font-semibold text-text-secondary">
+                        +{hiddenSourceCount}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
               {generated.description && (
                 <p className="mt-1 text-sm text-text-secondary">{generated.description}</p>
               )}
