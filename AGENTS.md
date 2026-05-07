@@ -201,6 +201,14 @@ frontend/
 9. **Rate Limiting** — The OpenAI proxy must have per-user daily limits. Redis counters.
 10. **No Panics** — Never panic in request handlers. Always return errors.
 
+## Testing Discipline (ENFORCED)
+
+- **Test-first for behavior changes.** For features, bug fixes, refactors, and behavior changes, write or update the failing test before production code.
+- **Prove the test matters.** Run the focused test and confirm it fails for the expected reason, then make the smallest implementation change that turns it green.
+- **Test behavior, not implementation trivia.** Prefer real code paths, clear test names, one behavior per test, and mocks only where external boundaries require them.
+- **Regression bugs need regression tests.** A bug is not fixed until a test would have caught it before the fix.
+- **Evidence before completion.** Before saying work is done, run the relevant focused tests plus the required build/test command for the changed area and report any failures honestly.
+
 ## Multiplayer Security (NON-NEGOTIABLE)
 
 - Every API route under `/instances/:instance_id/*` must verify instance membership via middleware.
@@ -216,6 +224,10 @@ frontend/
 - **Mobile-first.** The cooking view is used in kitchens — it must be flawless on tablets and phones.
 - **Performance is UX.** Target <100ms API responses, <2s initial page load.
 - **Testability first.** If code is hard to test, the design is wrong. Refactor until it's testable.
+
+## Commit As You Go (CAYG) — Worktree Hygiene (ENFORCED)
+
+Keep the working tree clean. Commit early, commit often — never sit on a dirty diff across agent turns or context switches. Each logical change (feature chunk, bug fix, refactor) gets its own commit with a descriptive message. Stash or commit before switching to a different task. A tidy worktree prevents merge conflicts, accidental rollups, and wasted debugging time.
 
 ## Database Migrations (ENFORCED)
 
@@ -253,6 +265,7 @@ Create a new `.sql` migration file **before any code that depends on the new sch
 5. **Run migration safety checks.** Use `make migrate-check` before review. This catches risky future migrations that need explicit approval comments.
 6. **Review the migration in PR.** The `.sql` file must be reviewed just like Go code.
 7. **Deploy.** The app runs `goose.Up` automatically at startup — migrations apply before the server accepts traffic.
+8. **Agent migration testing is minimal.** After writing the `.sql` file, only verify `cd backend && go build ./...` passes. Do **not** spin up Docker, run `goose up`/`goose down`, or attempt to validate the migration against a local Postgres database. `./backend.sh` owns migration application at deploy time — that is the authoritative test.
 
 ### Rules
 
@@ -283,6 +296,12 @@ The app auto-runs pending Goose migrations on startup. Treat every migration as 
 ## Post-Work Build Evaluation (ENFORCED)
 
 After any work is completed — whether a bug fix, feature, refactor, or dependency change — evaluate whether the frontend, backend, or both need to be rebuilt.
+
+### Backend Deploy Secrets
+
+- Do **not** manage Fly.io backend secrets manually with `fly secrets set` during normal deploy work. `backend.sh` is the source of truth for backend deploys: it loads `.env` by default, or `BACKEND_ENV_FILE=.env.staging ./backend.sh` when explicitly targeting staging, and syncs those values to Fly before deploying.
+- When changing backend deploy secrets, update the appropriate ignored env file first (`.env` or `.env.staging`) and deploy through `./backend.sh` so the next deploy cannot overwrite Fly with stale local values.
+- Production Upstash Redis URLs must use TLS: `REDIS_URL` should start with `rediss://`, not `redis://`. A plaintext Redis scheme against Upstash can make Redis startup fail and cause AI routes to return `503` because production rate limiting fails closed.
 
 1. **Determine what changed:**
    - Frontend code (React, TypeScript, CSS, HTML, assets, package.json in `/frontend` or equivalent) → rebuild frontend.
