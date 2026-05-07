@@ -21,9 +21,9 @@ func TestForInstance(t *testing.T) {
 	userID := uuid.MustParse("c0000000-0000-0000-0000-000000000001")
 
 	// Seed data in two instances
-	db.Create(&models.MediaItem{InstanceID: instA, TMDBID: 1, Type: "movie", Title: "A-Movie", CreatedByID: userID})
-	db.Create(&models.MediaItem{InstanceID: instA, TMDBID: 2, Type: "tv", Title: "A-Show", CreatedByID: userID})
-	db.Create(&models.MediaItem{InstanceID: instB, TMDBID: 3, Type: "movie", Title: "B-Movie", CreatedByID: userID})
+	db.Create(&models.MediaItem{InstanceID: instA, OMDBID: "tt0000001", Type: "movie", Title: "A-Movie", CreatedByID: userID})
+	db.Create(&models.MediaItem{InstanceID: instA, OMDBID: "tt0000002", Type: "tv", Title: "A-Show", CreatedByID: userID})
+	db.Create(&models.MediaItem{InstanceID: instB, OMDBID: "tt0000003", Type: "movie", Title: "B-Movie", CreatedByID: userID})
 
 	// Scope to instance A
 	var itemsA []models.MediaItem

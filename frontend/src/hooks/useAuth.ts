@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useAuth as useClerkAuth, useUser } from '@/lib/clerk'
 import { useMutation } from '@tanstack/react-query'
 import { api, setAuthTokenGetter } from '@/lib/api'
@@ -9,6 +9,7 @@ export function useAuth() {
   const clerk = useClerkAuth()
   const { user: clerkUser } = useUser()
   const { hasSynced, setHasSynced } = useAuthStore()
+  const attemptedAutoSyncUserId = useRef<string | null>(null)
 
   // Register token getter once per session — must be inside useEffect
   useEffect(() => {
@@ -37,10 +38,21 @@ export function useAuth() {
 
   // Auto-sync user to backend DB on first sign-in
   useEffect(() => {
-    if (clerk.isSignedIn && !hasSynced && !syncMutation.isPending) {
+    if (!clerk.isSignedIn) {
+      attemptedAutoSyncUserId.current = null
+      return
+    }
+
+    if (
+      clerk.userId &&
+      !hasSynced &&
+      !syncMutation.isPending &&
+      attemptedAutoSyncUserId.current !== clerk.userId
+    ) {
+      attemptedAutoSyncUserId.current = clerk.userId
       syncMutation.mutate()
     }
-  }, [clerk.isSignedIn, hasSynced, syncMutation])
+  }, [clerk.isSignedIn, clerk.userId, hasSynced, syncMutation])
 
   return {
     ...clerk,

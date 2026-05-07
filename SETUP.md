@@ -56,24 +56,24 @@ This document contains step-by-step instructions for configuring all external se
 
 ---
 
-## 3. TMDB (The Movie Database)
+## 3. OMDb (The Open Movie Database)
 
-**What it is:** Provides movie and TV show data (titles, posters, overviews, release dates).
+**What it is:** Provides movie and TV show search data.
 
 **Steps:**
-1. Go to https://www.themoviedb.org and create an account.
-2. Go to **Settings > API** (https://www.themoviedb.org/settings/api).
-3. Request an API key. Choose "Developer" and fill out the form.
-4. Copy the **API Key** (v3 auth).
+1. Go to https://www.omdbapi.com and create an account.
+2. Go to https://www.omdbapi.com/apikey.aspx.
+3. Request an API key. Fill out the key request form.
+4. Copy the API key from the OMDb email.
 5. Add to `.env`:
    ```
-   TMDB_API_KEY=your_key_here
+   OMDB_API_KEY=your_key_here
    ```
 
 **Gotchas:**
-- Rate limit: 40 requests per 10 seconds (unauthenticated requests to images don't count).
-- We proxy all TMDB calls through our Go backend to add caching and avoid exposing the key.
-- Images are loaded directly from `https://image.tmdb.org/t/p/` in the frontend (no API key needed for images).
+- Free keys have OMDb request limits; keep searches proxied through the backend.
+- We proxy all OMDb calls through our Go backend to add caching and avoid exposing the key.
+- Media artwork is not used for now.
 
 ---
 
@@ -100,7 +100,7 @@ This document contains step-by-step instructions for configuring all external se
 
 ## 5. Redis (Caching & Rate Limiting)
 
-**What it is:** In-memory store for caching TMDB results, rate limiting OpenAI usage, and WebSocket pub/sub.
+**What it is:** In-memory store for caching OMDb results, rate limiting OpenAI usage, and WebSocket pub/sub.
 
 **Local Development:**
 - Docker Compose includes Redis automatically. No setup needed.
@@ -137,7 +137,7 @@ This document contains step-by-step instructions for configuring all external se
    ```bash
    fly secrets set DATABASE_URL="..."
    fly secrets set CLERK_SECRET_KEY="..."
-   fly secrets set TMDB_API_KEY="..."
+   fly secrets set OMDB_API_KEY="..."
    fly secrets set OPENAI_API_KEY="..."
    fly secrets set REDIS_URL="..."
    ```
@@ -173,10 +173,10 @@ This document contains step-by-step instructions for configuring all external se
 
 ## Quick Checklist Before First Run
 
-- [ ] `.env` file created from `.env.example`
+- [ ] `.env` file created with production service values
 - [ ] NeonDB project created and `DATABASE_URL` set
 - [ ] Clerk app created, magic codes enabled, keys copied
-- [ ] TMDB API key requested and copied
+- [ ] OMDb API key requested and copied
 - [ ] OpenAI API key created and copied
 - [ ] Redis running locally (via Docker) or Upstash URL set
 - [ ] Frontend `.env.local` has `VITE_CLERK_PUBLISHABLE_KEY`
@@ -187,9 +187,7 @@ This document contains step-by-step instructions for configuring all external se
 # 1. Start infrastructure
 docker-compose up -d db redis
 
-# 2. Copy env
-cp .env.example .env
-# Edit .env with your real keys
+# 2. Ensure .env exists with your real keys
 
 # 3. Run backend
 cd backend
@@ -213,11 +211,12 @@ Tabletop has three clients: **web** (React + Vite), **iOS** (Expo React Native),
 
 ```bash
 # 1. Backend (same as web — can be shared)
+# Ensure .env.staging exists with staging keys and service URLs, then:
 ./dev.sh
 
 # 2. Mobile app
 cd mobile
-cp .env.example .env
+# Ensure .env exists with production service values
 npx expo start
 # Press 'i' for iOS Simulator or 'a' for Android Emulator
 ```

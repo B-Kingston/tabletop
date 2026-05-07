@@ -1,12 +1,13 @@
 import { useAuth as useClerkAuth } from '@/lib/clerk'
+import { getConfiguredAuthToken } from '@/lib/api'
 
 export function useAuthToken() {
-  const { getToken } = useClerkAuth()
+  useClerkAuth()
 
   const getAuthHeaders = async () => {
-    const token = await getToken()
+    const token = await getConfiguredAuthToken()
     return token ? { Authorization: `Bearer ${token}` } : {}
   }
 
-  return { getAuthHeaders, getToken }
+  return { getAuthHeaders, getToken: getConfiguredAuthToken }
 }

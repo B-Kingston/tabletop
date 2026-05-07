@@ -57,7 +57,7 @@ func TestCrossInstance_MediaAccess(t *testing.T) {
 	mediaSvc := services.NewMediaService(mediaRepo)
 	ctx := context.Background()
 
-	item, err := mediaSvc.Create(ctx, instanceA, userA, 550, "movie", "Fight Club", "Overview", "/poster.jpg", nil)
+	item, err := mediaSvc.Create(ctx, instanceA, userA, "tt0137523", "movie", "Fight Club", "Overview", "1999")
 	require.NoError(t, err)
 
 	_, err = mediaSvc.GetByID(ctx, instanceB, item.ID)
@@ -141,7 +141,7 @@ func TestCrossInstance_DeleteFromWrongInstance(t *testing.T) {
 
 	item := &models.MediaItem{
 		InstanceID:  instanceA,
-		TMDBID:      550,
+		OMDBID:      "tt0137523",
 		Type:        "movie",
 		Title:       "Protected",
 		Status:      "planning",
@@ -180,7 +180,7 @@ func TestFullFlow_CreateInstanceJoinAddMedia(t *testing.T) {
 	err = instanceSvc.JoinInstance(ctx, instance.ID, member.ID, "password123")
 	require.NoError(t, err)
 
-	_, err = mediaSvc.Create(ctx, instance.ID, owner.ID, 550, "movie", "Fight Club", "Great movie", "/poster.jpg", nil)
+	_, err = mediaSvc.Create(ctx, instance.ID, owner.ID, "tt0137523", "movie", "Fight Club", "Great movie", "1999")
 	require.NoError(t, err)
 
 	items, err := mediaSvc.List(ctx, instance.ID, "", "")

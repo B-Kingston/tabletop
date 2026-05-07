@@ -21,6 +21,7 @@ func setupServiceTestDB(t *testing.T) *gorm.DB {
 		&models.MediaItem{}, &models.Wine{}, &models.Recipe{},
 		&models.Ingredient{}, &models.RecipeStep{}, &models.RecipeTag{},
 		&models.ChatSession{}, &models.ChatMessage{},
+		&models.OMDBCache{},
 	)
 	require.NoError(t, err)
 

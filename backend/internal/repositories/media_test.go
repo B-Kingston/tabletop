@@ -29,11 +29,10 @@ func seedMediaTestDB(t *testing.T) (*gorm.DB, uuid.UUID, uuid.UUID) {
 func createTestMediaItem(instanceID, userID uuid.UUID, overrides ...func(*models.MediaItem)) *models.MediaItem {
 	item := &models.MediaItem{
 		InstanceID:  instanceID,
-		TMDBID:      123,
+		OMDBID:      "tt0000123",
 		Type:        "movie",
 		Title:       "Test Movie",
 		Overview:    "A test movie overview",
-		PosterPath:  "/poster.jpg",
 		Status:      "planning",
 		CreatedByID: userID,
 		UpdatedByID: userID,
@@ -68,7 +67,7 @@ func TestMediaRepository_GetByID(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, found)
 	assert.Equal(t, "Test Movie", found.Title)
-	assert.Equal(t, item.TMDBID, found.TMDBID)
+	assert.Equal(t, item.OMDBID, found.OMDBID)
 }
 
 func TestMediaRepository_GetByID_NotFound(t *testing.T) {

@@ -46,13 +46,7 @@ queryClient.setQueryDefaults(['member-messages'], {
   staleTime: 0,
 })
 
-// TMDB search and detail: 10 minutes (TMDB data changes infrequently)
-queryClient.setQueryDefaults(['tmdb-search'], {
-  staleTime: 10 * 60 * 1000,
-})
-queryClient.setQueryDefaults(['tmdb-movie'], {
-  staleTime: 10 * 60 * 1000,
-})
-queryClient.setQueryDefaults(['tmdb-tv'], {
+// OMDb search: 10 minutes (OMDb data changes infrequently)
+queryClient.setQueryDefaults(['omdb-search'], {
   staleTime: 10 * 60 * 1000,
 })

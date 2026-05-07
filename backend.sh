@@ -7,17 +7,21 @@
 # to Fly.io using fly deploy.
 #
 # Usage:
-#   ./backend.sh              Deploy to Fly.io
+#   ./backend.sh              Deploy to Fly.io, loading secrets from .env
 #   ./backend.sh --status     Show deployment status
 #   ./backend.sh --logs       Tail live logs
 #   ./backend.sh --secrets    List configured secrets
 #   ./backend.sh --set-secret KEY=VALUE   Set a secret
+#
+# Env:
+#   BACKEND_ENV_FILE=.env.staging ./backend.sh
 # ==============================================
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 APP_NAME="tabletop-api-frosty-flower-1050"
+ENV_FILE="${BACKEND_ENV_FILE:-$SCRIPT_DIR/.env}"
 
 # Colours
 RED='\033[0;31m'
@@ -27,11 +31,41 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # ---- helpers ----
+load_env() {
+  if [ -f "$ENV_FILE" ]; then
+    while IFS= read -r line || [ -n "$line" ]; do
+      [[ "$line" =~ ^[[:space:]]*$ || "$line" =~ ^[[:space:]]*# ]] && continue
+      [[ "$line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] || continue
+      export "$line"
+    done < "$ENV_FILE"
+  fi
+}
+
 check_fly() {
   if ! command -v fly >/dev/null 2>&1; then
     echo -e "${RED}❌  fly CLI not found.${NC}"
     echo -e "${YELLOW}    Install: curl -L https://fly.io/install.sh | sh${NC}"
     exit 1
+  fi
+}
+
+sync_fly_secrets_from_env() {
+  local names=("$@")
+  local synced=()
+  local secret_args=()
+
+  for name in "${names[@]}"; do
+    local value="${!name:-}"
+    if [ -n "$value" ]; then
+      synced+=("$name")
+      secret_args+=("$name=$value")
+    fi
+  done
+
+  if [ ${#synced[@]} -gt 0 ]; then
+    echo -e "${YELLOW}🔐  Syncing secrets from $(basename "$ENV_FILE") in one Fly release ...${NC}"
+    fly secrets set -a "$APP_NAME" "${secret_args[@]}" >/dev/null
+    echo -e "${GREEN}✅  Synced secrets: ${synced[*]}${NC}"
   fi
 }
 
@@ -111,13 +145,34 @@ cmd_deploy() {
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   echo ""
 
+  # Push local .env values to Fly before verifying required secrets.
+  if [ -f "$ENV_FILE" ]; then
+    echo -e "${YELLOW}🔐  Loading deploy secrets from $ENV_FILE ...${NC}"
+    sync_fly_secrets_from_env \
+      DATABASE_URL \
+      CLERK_SECRET_KEY \
+      CLERK_PUBLISHABLE_KEY \
+      CLERK_WEBHOOK_SECRET \
+      CLERK_JWKS_URL \
+      CLERK_ISSUER \
+      CLERK_AUDIENCE \
+      OMDB_API_KEY \
+      OPENAI_API_KEY \
+      REDIS_URL \
+      FRONTEND_URL
+    echo ""
+  else
+    echo -e "${YELLOW}⚠️   $ENV_FILE not found; checking existing Fly secrets only.${NC}"
+    echo ""
+  fi
+
   # Verify required secrets are set before deploying
   echo -e "${YELLOW}🔍  Checking required secrets ...${NC}"
   local secrets
   secrets=$(fly secrets list -a "$APP_NAME" 2>/dev/null || echo "")
 
   local missing=()
-  for secret in DATABASE_URL CLERK_SECRET_KEY CLERK_PUBLISHABLE_KEY CLERK_JWKS_URL TMDB_API_KEY; do
+  for secret in DATABASE_URL CLERK_SECRET_KEY CLERK_PUBLISHABLE_KEY CLERK_JWKS_URL CLERK_ISSUER CLERK_AUDIENCE OMDB_API_KEY; do
     if ! echo "$secrets" | grep -q "$secret"; then
       missing+=("$secret")
     fi
@@ -131,7 +186,9 @@ cmd_deploy() {
     echo -e "${YELLOW}      CLERK_SECRET_KEY      — Clerk backend secret${NC}"
     echo -e "${YELLOW}      CLERK_PUBLISHABLE_KEY — Clerk publishable key${NC}"
     echo -e "${YELLOW}      CLERK_JWKS_URL        — Clerk JWKS endpoint${NC}"
-    echo -e "${YELLOW}      TMDB_API_KEY          — TMDB API key${NC}"
+    echo -e "${YELLOW}      CLERK_ISSUER          — Clerk issuer URL${NC}"
+    echo -e "${YELLOW}      CLERK_AUDIENCE        — Clerk JWT audience${NC}"
+    echo -e "${YELLOW}      OMDB_API_KEY          — OMDb API key${NC}"
     echo -e "${YELLOW}      OPENAI_API_KEY        — (optional) OpenAI key${NC}"
     echo -e "${YELLOW}      REDIS_URL             — (optional) Redis URL${NC}"
     exit 1
@@ -153,6 +210,8 @@ cmd_deploy() {
 }
 
 # ---- main ----
+load_env
+
 case "${1:-}" in
   --status|-s)
     cmd_status
@@ -174,6 +233,9 @@ case "${1:-}" in
     ;;
   --help|-h)
     echo "Usage: ./backend.sh [command]"
+    echo ""
+    echo "Env:"
+    echo "  BACKEND_ENV_FILE=path  Load deploy secrets from a file other than .env"
     echo ""
     echo "Commands:"
     echo "  (none)              Deploy backend to Fly.io"

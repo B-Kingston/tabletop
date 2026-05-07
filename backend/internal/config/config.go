@@ -29,8 +29,8 @@ type Config struct {
 	ClerkAudience       string
 
 	// External APIs
-	TMDBAPIKey    string
-	OpenAIAPIKey  string
+	OMDBAPIKey   string
+	OpenAIAPIKey string
 
 	// CORS
 	FrontendURL string
@@ -61,7 +61,7 @@ func Load() *Config {
 		ClerkJWKSURL:        getEnv("CLERK_JWKS_URL", ""),
 		ClerkIssuer:         getEnv("CLERK_ISSUER", ""),
 		ClerkAudience:       getEnv("CLERK_AUDIENCE", ""),
-		TMDBAPIKey:          getEnv("TMDB_API_KEY", ""),
+		OMDBAPIKey:          getEnv("OMDB_API_KEY", ""),
 		OpenAIAPIKey:        getEnv("OPENAI_API_KEY", ""),
 		FrontendURL:         getEnv("FRONTEND_URL", "http://localhost:3000"),
 		DevSkipAuth:         devSkipAuth,
@@ -119,8 +119,8 @@ func (c *Config) Validate() error {
 	if c.ClerkAudience == "" {
 		return fmt.Errorf("CLERK_AUDIENCE is required")
 	}
-	if c.TMDBAPIKey == "" {
-		return fmt.Errorf("TMDB_API_KEY is required")
+	if c.OMDBAPIKey == "" {
+		return fmt.Errorf("OMDB_API_KEY is required")
 	}
 	return nil
 }

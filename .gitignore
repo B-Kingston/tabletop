@@ -12,6 +12,7 @@ frontend/.vite/
 
 # Environment
 .env
+.env.staging
 .env.local
 .env.*.local
 

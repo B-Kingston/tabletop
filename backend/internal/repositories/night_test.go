@@ -53,7 +53,7 @@ func createTestRecipeForNight(instanceID, userID uuid.UUID) *models.Recipe {
 func createTestMediaItemForNight(instanceID, userID uuid.UUID) *models.MediaItem {
 	return &models.MediaItem{
 		InstanceID:  instanceID,
-		TMDBID:      123,
+		OMDBID:      "tt0000123",
 		Type:        "movie",
 		Title:       "Test Movie",
 		CreatedByID: userID,

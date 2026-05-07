@@ -19,8 +19,8 @@ import (
 	mediahandler "tabletop/backend/internal/handlers/media"
 	messagehandler "tabletop/backend/internal/handlers/messages"
 	nightshandler "tabletop/backend/internal/handlers/nights"
+	"tabletop/backend/internal/handlers/omdb"
 	recipehandler "tabletop/backend/internal/handlers/recipes"
-	"tabletop/backend/internal/handlers/tmdb"
 	"tabletop/backend/internal/handlers/webhooks"
 	winehandler "tabletop/backend/internal/handlers/wines"
 	"tabletop/backend/internal/middleware"
@@ -97,7 +97,8 @@ func main() {
 	openaiService := services.NewOpenAIService(cfg.OpenAIAPIKey, openaiRateLimiter, 20, cfg.Environment == "production")
 	chatService := services.NewChatService(chatSessionRepo, chatMessageRepo, openaiService)
 	memberMessageService := services.NewMemberMessageService(memberMessageRepo)
-	tmdbService := services.NewTMDBService(cfg.TMDBAPIKey)
+	omdbCacheRepo := repositories.NewOMDBCacheRepository(db.DB)
+	omdbService := services.NewOMDBService(cfg.OMDBAPIKey, omdbCacheRepo)
 
 	hub := ws.NewHub()
 	go hub.Run()
@@ -110,7 +111,7 @@ func main() {
 	nightHandler := nightshandler.NewHandler(nightService, db.DB)
 	chatHandler := chat.NewHandler(chatService)
 	messageHandler := messagehandler.NewHandler(memberMessageService, hub)
-	tmdbHandler := tmdb.NewHandler(tmdbService)
+	omdbHandler := omdb.NewHandler(omdbService)
 	aiHandler := ai.NewHandler(openaiService)
 	webhookHandler := webhooks.NewHandler(userRepo, cfg.ClerkWebhookSecret)
 
@@ -166,7 +167,7 @@ func main() {
 		nightHandler.RegisterRoutes(instance)
 		messageHandler.RegisterRoutes(instance)
 		chatHandler.RegisterRoutes(instance)
-		tmdbHandler.RegisterRoutes(instance)
+		omdbHandler.RegisterRoutes(instance)
 		aiHandler.RegisterRoutes(instance)
 	}
 

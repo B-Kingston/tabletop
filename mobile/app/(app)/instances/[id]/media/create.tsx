@@ -17,16 +17,10 @@ import { Skeleton } from '@/components/Skeleton'
 import { ErrorState } from '@/components/ErrorState'
 import { EmptyState } from '@/components/EmptyState'
 import { useTheme } from '@/theme'
-import { useTMDBSearch, useTMDBMovieDetails, useTMDBTVDetails } from '@/hooks/useTMDB'
+import { useOMDBSearch, useOMDBDetail } from '@/hooks/useOMDB'
 import { useAddMedia } from '@/hooks/useMedia'
-import { getMediaLabel } from '@tabletop/shared'
 
-import type { TMDBSearchResult } from '@tabletop/shared'
-
-// ── Constants ─────────────────────────────────────────────────────────────
-
-const TMDB_POSTER_BASE = 'https://image.tmdb.org/t/p/w200'
-const TMDB_POSTER_LARGE_BASE = 'https://image.tmdb.org/t/p/w342'
+import type { OMDBSearchResult } from '@/hooks/useOMDB'
 
 const FALLBACK_ICON: Record<string, string> = {
   movie: '🎬',
@@ -34,7 +28,7 @@ const FALLBACK_ICON: Record<string, string> = {
 }
 
 /**
- * Media create screen — TMDB search + add flow.
+ * Media create screen — OMDb search + add flow.
  */
 export default function MediaCreateScreen() {
   const { id: instanceId } = useLocalSearchParams<{ id: string }>()
@@ -42,7 +36,7 @@ export default function MediaCreateScreen() {
   const router = useRouter()
 
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedResult, setSelectedResult] = useState<TMDBSearchResult | null>(null)
+  const [selectedResult, setSelectedResult] = useState<OMDBSearchResult | null>(null)
 
   const {
     data: searchResults,
@@ -50,56 +44,30 @@ export default function MediaCreateScreen() {
     isError: isSearchError,
     error: searchError,
     refetch,
-  } = useTMDBSearch(instanceId, searchQuery, 1)
+  } = useOMDBSearch(instanceId, searchQuery, 1)
+
+  const { data: selectedDetail, isLoading: detailLoading } = useOMDBDetail(
+    instanceId,
+    selectedResult?.omdbId,
+  )
 
   const addMedia = useAddMedia(instanceId)
 
-  // When a result is selected, show its detail preview
-  const selectedTmdbId = selectedResult?.id ?? 0
-  const selectedType = selectedResult?.media_type === 'tv'
-    ? 'tv'
-    : selectedResult?.media_type === 'movie'
-      ? 'movie'
-      : null
-
-  const {
-    data: movieDetails,
-    isLoading: isLoadingMovie,
-  } = useTMDBMovieDetails(instanceId, selectedType === 'movie' ? selectedTmdbId : 0)
-
-  const {
-    data: tvDetails,
-    isLoading: isLoadingTV,
-  } = useTMDBTVDetails(instanceId, selectedType === 'tv' ? selectedTmdbId : 0)
-
-  const detailData = selectedType === 'movie' ? movieDetails : tvDetails
-  const isLoadingDetail = selectedType === 'movie' ? isLoadingMovie : isLoadingTV
-
   // ── Handlers ──────────────────────────────────────────────────────────
 
-  const handleSelectResult = useCallback((result: TMDBSearchResult) => {
+  const handleSelectResult = useCallback((result: OMDBSearchResult) => {
     setSelectedResult(result)
   }, [])
 
   const handleAddToCollection = useCallback(() => {
     if (!selectedResult) return
 
-    const releaseDate =
-      selectedResult.release_date || selectedResult.first_air_date || undefined
-    const displayTitle = getMediaLabel(
-      selectedResult.media_type === 'tv' ? 'tv' : 'movie',
-      selectedResult.title ?? '',
-      selectedResult.name ?? undefined,
-    )
-
     addMedia.mutate(
       {
-        tmdbId: selectedResult.id,
-        type: selectedResult.media_type === 'tv' ? 'tv' : 'movie',
-        title: displayTitle,
-        overview: selectedResult.overview || undefined,
-        posterPath: selectedResult.poster_path || undefined,
-        releaseDate,
+        omdbId: selectedResult.omdbId,
+        type: selectedResult.type,
+        title: selectedResult.title,
+        releaseYear: selectedResult.releaseYear || undefined,
       },
       {
         onSuccess: () => {
@@ -116,28 +84,15 @@ export default function MediaCreateScreen() {
   // ── Render: search result card ────────────────────────────────────────
 
   const renderResultCard = useCallback(
-    ({ item }: { item: TMDBSearchResult }) => {
-      const posterUri = item.poster_path
-        ? `${TMDB_POSTER_BASE}${item.poster_path}`
-        : null
-      const displayTitle = getMediaLabel(
-        item.media_type === 'tv' ? 'tv' : 'movie',
-        item.title ?? '',
-        item.name ?? undefined,
-      )
-      const year = item.release_date
-        ? item.release_date.slice(0, 4)
-        : item.first_air_date
-          ? item.first_air_date.slice(0, 4)
-          : null
-      const typeLabel = item.media_type === 'tv' ? 'TV' : 'Movie'
-      const isSelected = selectedResult?.id === item.id
+    ({ item }: { item: OMDBSearchResult }) => {
+      const typeLabel = item.type === 'tv' ? 'TV' : 'Movie'
+      const isSelected = selectedResult?.omdbId === item.omdbId
 
       return (
         <TouchableOpacity
           onPress={() => handleSelectResult(item)}
           accessibilityRole="button"
-          accessibilityLabel={`Select ${displayTitle}`}
+          accessibilityLabel={`Select ${item.title}`}
           style={[
             styles.resultCard,
             {
@@ -150,38 +105,29 @@ export default function MediaCreateScreen() {
           ]}
         >
           <View style={styles.resultRow}>
-            {posterUri ? (
-              <Image
-                source={{ uri: posterUri }}
-                style={[styles.resultPoster, { borderRadius: 4 }]}
-                contentFit="cover"
-                transition={200}
-              />
-            ) : (
-              <View
-                style={[
-                  styles.resultPoster,
-                  {
-                    backgroundColor: colors.surfaceSecondary,
-                    borderRadius: 4,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  },
-                ]}
-              >
-                <Text style={{ fontSize: 20 }}>
-                  {FALLBACK_ICON[item.media_type === 'tv' ? 'tv' : 'movie'] ?? '🎬'}
-                </Text>
-              </View>
-            )}
+            <View
+              style={[
+                styles.resultPoster,
+                {
+                  backgroundColor: colors.surfaceSecondary,
+                  borderRadius: 4,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                },
+              ]}
+            >
+              <Text style={{ fontSize: 20 }}>
+                {FALLBACK_ICON[item.type] ?? '🎬'}
+              </Text>
+            </View>
             <View style={styles.resultInfo}>
               <Text style={[typography.bodyBold, { color: colors.text }]} numberOfLines={2}>
-                {displayTitle}
+                {item.title}
               </Text>
               <View style={[styles.resultMeta, { marginTop: spacing.xs }]}>
-                {year ? (
+                {item.releaseYear ? (
                   <Text style={[typography.label, { color: colors.textSecondary }]}>
-                    {year}
+                    {item.releaseYear}
                   </Text>
                 ) : null}
                 <View
@@ -199,23 +145,7 @@ export default function MediaCreateScreen() {
                     {typeLabel}
                   </Text>
                 </View>
-                {item.vote_average > 0 ? (
-                  <Text style={[typography.label, { color: colors.warning }]}>
-                    ★ {item.vote_average.toFixed(1)}
-                  </Text>
-                ) : null}
               </View>
-              {item.overview ? (
-                <Text
-                  style={[
-                    typography.caption,
-                    { color: colors.textTertiary, marginTop: spacing.xs },
-                  ]}
-                  numberOfLines={2}
-                >
-                  {item.overview}
-                </Text>
-              ) : null}
             </View>
           </View>
         </TouchableOpacity>
@@ -229,32 +159,7 @@ export default function MediaCreateScreen() {
   const renderDetailPreview = () => {
     if (!selectedResult) return null
 
-    const displayTitle = getMediaLabel(
-      selectedResult.media_type === 'tv' ? 'tv' : 'movie',
-      selectedResult.title ?? '',
-      selectedResult.name ?? undefined,
-    )
-    const posterUri = selectedResult.poster_path
-      ? `${TMDB_POSTER_LARGE_BASE}${selectedResult.poster_path}`
-      : null
-    const year = selectedResult.release_date
-      ? selectedResult.release_date.slice(0, 4)
-      : selectedResult.first_air_date
-        ? selectedResult.first_air_date.slice(0, 4)
-        : null
-
-    // Additional details from the TMDB detail endpoint
-    const extraInfo =
-      detailData && 'runtime' in detailData
-        ? `${detailData.runtime} min`
-        : detailData && 'number_of_seasons' in detailData
-          ? `${detailData.number_of_seasons} season${detailData.number_of_seasons !== 1 ? 's' : ''}`
-          : null
-
-    const genres =
-      detailData?.genres && detailData.genres.length > 0
-        ? detailData.genres.map((g) => g.name).join(', ')
-        : null
+    const hasPoster = selectedDetail?.poster && selectedDetail.poster !== 'N/A'
 
     return (
       <View
@@ -276,7 +181,7 @@ export default function MediaCreateScreen() {
             style={[typography.h3, { color: colors.text, flex: 1 }]}
             numberOfLines={2}
           >
-            {displayTitle}
+            {selectedResult.title}
           </Text>
           <TouchableOpacity
             onPress={handleClearSelection}
@@ -300,12 +205,12 @@ export default function MediaCreateScreen() {
 
         {/* Preview poster + info */}
         <View style={styles.previewRow}>
-          {posterUri ? (
+          {hasPoster ? (
             <Image
-              source={{ uri: posterUri }}
+              source={{ uri: selectedDetail!.poster }}
               style={[styles.previewPoster, { borderRadius: 8 }]}
               contentFit="cover"
-              transition={300}
+              transition={200}
             />
           ) : (
             <View
@@ -320,47 +225,44 @@ export default function MediaCreateScreen() {
               ]}
             >
               <Text style={{ fontSize: 40 }}>
-                {FALLBACK_ICON[selectedResult.media_type === 'tv' ? 'tv' : 'movie'] ?? '🎬'}
+                {FALLBACK_ICON[selectedResult.type] ?? '🎬'}
               </Text>
             </View>
           )}
           <View style={styles.previewInfo}>
-            {year ? (
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>
+              {selectedResult.type === 'tv' ? 'TV' : 'Movie'}
+            </Text>
+            {selectedResult.releaseYear ? (
               <Text style={[typography.caption, { color: colors.textSecondary }]}>
-                {year}
+                {selectedResult.releaseYear}
               </Text>
             ) : null}
-            {selectedResult.vote_average > 0 ? (
-              <Text style={[typography.caption, { color: colors.warning, marginTop: spacing.xs }]}>
-                ★ {selectedResult.vote_average.toFixed(1)} / 10
+            {selectedDetail?.imdbRating && selectedDetail.imdbRating !== 'N/A' && (
+              <Text style={[typography.labelBold, { color: '#854D0E', marginTop: spacing.xs }]}>
+                IMDb {selectedDetail.imdbRating}
               </Text>
-            ) : null}
-            {isLoadingDetail ? (
-              <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: spacing.sm }} />
-            ) : extraInfo ? (
-              <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.xs }]}>
-                {extraInfo}
+            )}
+            {detailLoading && (
+              <Text style={[typography.caption, { color: colors.textTertiary, marginTop: spacing.xs }]}>
+                Loading details...
               </Text>
-            ) : null}
-            {!isLoadingDetail && genres ? (
-              <Text style={[typography.label, { color: colors.textTertiary, marginTop: spacing.xs }]}>
-                {genres}
-              </Text>
-            ) : null}
+            )}
           </View>
         </View>
 
-        {/* Overview */}
-        {selectedResult.overview ? (
+        {/* Plot snippet */}
+        {selectedDetail?.plot && selectedDetail.plot !== 'N/A' && (
           <Text
             style={[
               typography.body,
               { color: colors.textSecondary, marginTop: spacing.md },
             ]}
+            numberOfLines={3}
           >
-            {selectedResult.overview}
+            {selectedDetail.plot}
           </Text>
-        ) : null}
+        )}
 
         {/* Add button */}
         <View style={{ marginTop: spacing.lg }}>
@@ -414,7 +316,7 @@ export default function MediaCreateScreen() {
         <TextInput
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholder="Search TMDB..."
+          placeholder="Search OMDb..."
           placeholderTextColor={colors.textTertiary}
           style={[
             typography.body,
@@ -424,7 +326,7 @@ export default function MediaCreateScreen() {
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="search"
-          accessibilityLabel="Search TMDB"
+          accessibilityLabel="Search OMDb"
         />
         {isSearching ? (
           <ActivityIndicator size="small" color={colors.primary} />
@@ -444,7 +346,7 @@ export default function MediaCreateScreen() {
         <View style={{ flex: 1 }}>
           <FlatList
             data={searchResults}
-            keyExtractor={(item) => `tmdb-${item.id}-${item.media_type ?? 'unknown'}`}
+            keyExtractor={(item) => `omdb-${item.omdbId}`}
             renderItem={renderResultCard}
             ListHeaderComponent={
               <Text

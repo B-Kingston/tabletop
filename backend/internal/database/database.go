@@ -68,6 +68,7 @@ func (db *DB) AutoMigrate() error {
 		&models.RecipeTag{},
 		&models.ChatSession{},
 		&models.ChatMessage{},
+		&models.OMDBCache{},
 	)
 }
 

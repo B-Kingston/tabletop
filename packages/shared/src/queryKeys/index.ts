@@ -45,11 +45,11 @@ export const memberMessagesKeys = {
   list: (instanceId: string) => ['member-messages', instanceId] as const,
 }
 
-export const tmdbKeys = {
+export const omdbKeys = {
   search: (instanceId: string, query: string, page: number, type?: string) =>
     type
-      ? (['tmdb-search', instanceId, query, page, type] as const)
-      : (['tmdb-search', instanceId, query, page] as const),
-  movie: (instanceId: string, id: number) => ['tmdb-movie', instanceId, id] as const,
-  tv: (instanceId: string, id: number) => ['tmdb-tv', instanceId, id] as const,
+      ? (['omdb-search', instanceId, query, page, type] as const)
+      : (['omdb-search', instanceId, query, page] as const),
+  detail: (instanceId: string, omdbId: string) =>
+    ['omdb-detail', instanceId, omdbId] as const,
 }

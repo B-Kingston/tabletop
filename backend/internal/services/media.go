@@ -18,15 +18,14 @@ func NewMediaService(mediaRepo repositories.MediaRepository) *MediaService {
 	return &MediaService{mediaRepo: mediaRepo}
 }
 
-func (s *MediaService) Create(ctx context.Context, instanceID, userID uuid.UUID, tmdbID int, mediaType, title, overview, posterPath string, releaseDate *time.Time) (*models.MediaItem, error) {
+func (s *MediaService) Create(ctx context.Context, instanceID, userID uuid.UUID, omdbID, mediaType, title, overview, releaseYear string) (*models.MediaItem, error) {
 	item := &models.MediaItem{
 		InstanceID:  instanceID,
-		TMDBID:      tmdbID,
+		OMDBID:      omdbID,
 		Type:        mediaType,
 		Title:       title,
 		Overview:    overview,
-		PosterPath:  posterPath,
-		ReleaseDate: releaseDate,
+		ReleaseYear: releaseYear,
 		Status:      "planning",
 		CreatedByID: userID,
 		UpdatedByID: userID,

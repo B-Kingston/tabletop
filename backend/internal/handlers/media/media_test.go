@@ -59,11 +59,11 @@ func TestHandler_Create(t *testing.T) {
 	})
 
 	body := createRequest{
-		TMDBID:     550,
-		Type:       "movie",
-		Title:      "Fight Club",
-		Overview:   "A great movie",
-		PosterPath: "/poster.jpg",
+		OMDBID:      "tt0137523",
+		Type:        "movie",
+		Title:       "Fight Club",
+		Overview:    "A great movie",
+		ReleaseYear: "1999",
 	}
 	jsonBody, _ := json.Marshal(body)
 
@@ -78,6 +78,8 @@ func TestHandler_Create(t *testing.T) {
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 	data := resp["data"].(map[string]interface{})
 	assert.Equal(t, "Fight Club", data["title"])
+	assert.Equal(t, "tt0137523", data["omdbId"])
+	assert.Equal(t, "1999", data["releaseYear"])
 	assert.Equal(t, "planning", data["status"])
 }
 
@@ -89,7 +91,7 @@ func TestHandler_Create_InvalidType(t *testing.T) {
 		handler.Create(c)
 	})
 
-	body := createRequest{TMDBID: 1, Type: "invalid", Title: "Test"}
+	body := createRequest{OMDBID: "tt0000001", Type: "invalid", Title: "Test"}
 	jsonBody, _ := json.Marshal(body)
 
 	w := httptest.NewRecorder()
@@ -128,7 +130,7 @@ func TestHandler_Get(t *testing.T) {
 		handler.Create(c)
 	})
 
-	body := createRequest{TMDBID: 550, Type: "movie", Title: "Fight Club"}
+	body := createRequest{OMDBID: "tt0137523", Type: "movie", Title: "Fight Club"}
 	jsonBody, _ := json.Marshal(body)
 
 	w := httptest.NewRecorder()
@@ -180,7 +182,7 @@ func TestHandler_Delete(t *testing.T) {
 		handler.Delete(c)
 	})
 
-	body := createRequest{TMDBID: 550, Type: "movie", Title: "Fight Club"}
+	body := createRequest{OMDBID: "tt0137523", Type: "movie", Title: "Fight Club"}
 	jsonBody, _ := json.Marshal(body)
 
 	w := httptest.NewRecorder()

@@ -30,12 +30,11 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 }
 
 type createRequest struct {
-	TMDBID      int     `json:"tmdbId" binding:"required"`
-	Type        string  `json:"type" binding:"required,oneof=movie tv"`
-	Title       string  `json:"title" binding:"required"`
-	Overview    string  `json:"overview"`
-	PosterPath  string  `json:"posterPath"`
-	ReleaseDate *string `json:"releaseDate"`
+	OMDBID      string `json:"omdbId" binding:"required"`
+	Type        string `json:"type" binding:"required,oneof=movie tv"`
+	Title       string `json:"title" binding:"required"`
+	Overview    string `json:"overview"`
+	ReleaseYear string `json:"releaseYear"`
 }
 
 type updateRequest struct {
@@ -64,26 +63,15 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	var releaseDate *time.Time
-	if req.ReleaseDate != nil {
-		t, err := time.Parse("2006-01-02", *req.ReleaseDate)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid releaseDate format, expected YYYY-MM-DD"})
-			return
-		}
-		releaseDate = &t
-	}
-
 	item, err := h.service.Create(
 		c.Request.Context(),
 		instanceID,
 		userID,
-		req.TMDBID,
+		req.OMDBID,
 		req.Type,
 		req.Title,
 		req.Overview,
-		req.PosterPath,
-		releaseDate,
+		req.ReleaseYear,
 	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

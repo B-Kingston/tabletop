@@ -23,12 +23,11 @@ export interface Instance {
 export interface MediaItem {
   id: string
   instanceId: string
-  tmdbId: number
+  omdbId: string
   type: 'movie' | 'tv'
   title: string
   overview: string
-  posterPath: string
-  releaseDate: string | null
+  releaseYear: string
   planToWatchDate: string | null
   status: 'planning' | 'watching' | 'completed' | 'dropped'
   rating: number | null
@@ -147,37 +146,46 @@ export interface Night {
   createdBy?: User
 }
 
-export interface TMDBSearchResult {
-  id: number
-  title?: string
-  name?: string
-  overview: string
-  poster_path?: string
-  release_date?: string
-  first_air_date?: string
-  media_type?: string
-  vote_average: number
+export interface OMDBRating {
+  source: string
+  value: string
 }
 
-export interface TMDBMovieDetails {
-  id: number
+export interface OMDBDetail {
   title: string
-  overview: string
-  poster_path: string
-  release_date: string
-  runtime: number
-  vote_average: number
-  genres: { id: number; name: string }[]
+  year: string
+  rated: string
+  released: string
+  runtime: string
+  genre: string
+  director: string
+  writer: string
+  actors: string
+  plot: string
+  language: string
+  country: string
+  awards: string
+  poster: string
+  ratings: OMDBRating[]
+  metascore: string
+  imdbRating: string
+  imdbVotes: string
+  imdbId: string
+  type: string
+  boxOffice: string
+  production: string
+  totalSeasons: string
 }
 
-export interface TMDBTVDetails {
-  id: number
-  name: string
-  overview: string
-  poster_path: string
-  first_air_date: string
-  number_of_episodes: number
-  number_of_seasons: number
-  vote_average: number
-  genres: { id: number; name: string }[]
+export interface OMDBSearchResult {
+  omdbId: string
+  title: string
+  type: 'movie' | 'tv'
+  releaseYear: string
+}
+
+export interface OMDBSearchResponse {
+  page: number
+  results: OMDBSearchResult[]
+  totalResults: number
 }

@@ -4,45 +4,56 @@ Track media, wines, and recipes with the people you share them with.
 
 > **Note:** This project was built with AI **lots** of assistance, from architecture and code generation to review and iteration. It's a deliberate experiment in treating AI as a co-developer rather than just a tool.
 
-## Two Ways to Run Locally
+## Local and Staging Commands
 
 | Mode | Command | What's running | Use for |
 |------|---------|--------------|---------|
-| **Dev** (fast iteration) | `./dev.sh` | Docker infra (Postgres + Redis) + native Go backend + native Vite frontend | Daily development, hot-reload |
-| **Prod-like** (containerized) | `./run.sh` | Full Docker Compose stack (db, redis, api, web) | Testing the production build, CI verification |
+| **Dev** (default staging) | `./dev.sh` | Native Go backend + native Vite frontend, using staging Postgres/Redis and real Clerk auth | Daily full-stack development against staging data |
+| **Frontend prod build** | `./run.sh` | Built frontend in Docker/Nginx on port 3000, pointed at a deployed backend | Testing the production frontend against the real backend |
+| **Backend deploy** | `./backend.sh` | Deploys the Go backend to Fly.io | Real backend deploys, logs, secrets, migrations |
 
 ### Dev mode (`./dev.sh`)
 
-Requires **Go 1.22+**, **Node 20+**, and **Docker**.
+Requires **Go 1.22+** and **Node 20+**. Docker is only required when the selected env file points at local Postgres or Redis.
 
 ```bash
-# One-time setup
-cp .env.dev.example .env.dev
+# One-time setup: create .env.staging with staging Clerk,
+# DATABASE_URL, REDIS_URL, OMDb, and OpenAI values.
+
 # Optional: install Go hot-reloader
 # go install github.com/air-verse/air@latest
 
 ./dev.sh
 ```
 
-- Postgres + Redis start in Docker
+- Real Clerk auth is enabled by default
 - Backend runs natively at `http://localhost:8080` (auto-reloads with `air` if installed)
 - Frontend runs natively at `http://localhost:3000` (Vite HMR)
-- Press `Ctrl+C` to stop the native processes; Docker infra stays up (stop it with `docker compose down`)
+- Backend dependencies come from `.env.staging`, usually staging Neon/Postgres and staging Redis
+- Goose migrations run against the configured database when the backend starts
 
-### Prod-like mode (`./run.sh`)
+### Frontend production build (`./run.sh`)
 
 Requires **Docker** only.
 
 ```bash
-cp .env.example .env
-# Fill in real Clerk, TMDB, and OpenAI keys
+# Ensure .env contains CLERK_PUBLISHABLE_KEY and VITE_API_URL
+# for the deployed backend.
 
 ./run.sh
 ```
 
-- All four services run in containers
-- API available at `http://localhost:8080`
-- Built SPA served by nginx at `http://localhost:3000`
+- Builds the frontend Docker image
+- Serves the built SPA through nginx at `http://localhost:3000`
+- Requires `VITE_API_URL` to point at a deployed backend, not localhost
+
+### Backend deploy (`./backend.sh`)
+
+```bash
+./backend.sh
+```
+
+Deploys the real Go backend to Fly.io. Use `./backend.sh --logs`, `./backend.sh --status`, `./backend.sh --secrets`, and `./backend.sh --migrate-status` for operations.
 
 ## Stack
 
@@ -51,7 +62,7 @@ cp .env.example .env
 - **Auth:** Clerk (magic code email verification)
 - **Real-time:** WebSockets + Redis pub/sub
 - **AI:** OpenAI GPT-4o-mini (server-side proxy with per-user rate limiting)
-- **External:** TMDB API for media data
+- **External:** OMDb API for media data
 
 ## Project Structure
 
@@ -81,8 +92,7 @@ tabletop/
 │   └── public/
 ├── docker-compose.yml
 ├── AGENTS.md         # AI coding constitution
-├── SETUP.md          # External service setup guide
-└── .env.example
+└── SETUP.md          # External service setup guide
 ```
 
 ## Testing

@@ -11,10 +11,10 @@ export type {
   ChatMessage,
   MemberMessage,
   Night,
-  TMDBSearchResult,
-  TMDBSearchResponse,
-  TMDBMovieDetails,
-  TMDBTVDetails,
+  OMDBRating,
+  OMDBDetail,
+  OMDBSearchResult,
+  OMDBSearchResponse,
 } from './models.js'
 
 export type { ApiResponse, PaginatedResponse } from './api.js'

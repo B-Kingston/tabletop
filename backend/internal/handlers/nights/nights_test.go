@@ -90,7 +90,7 @@ func TestHandler_Create_WithFKs(t *testing.T) {
 	recipe := models.Recipe{InstanceID: instanceID, Title: "Bolognese", PrepTime: 10, CookTime: 20, Servings: 2, CreatedByID: userID, UpdatedByID: userID}
 	require.NoError(t, db.Create(&recipe).Error)
 
-	media := models.MediaItem{InstanceID: instanceID, TMDBID: 123, Type: "movie", Title: "The Godfather", CreatedByID: userID, UpdatedByID: userID}
+	media := models.MediaItem{InstanceID: instanceID, OMDBID: "tt0000123", Type: "movie", Title: "The Godfather", CreatedByID: userID, UpdatedByID: userID}
 	require.NoError(t, db.Create(&media).Error)
 
 	r.POST("/instances/:instance_id/nights", func(c *gin.Context) {

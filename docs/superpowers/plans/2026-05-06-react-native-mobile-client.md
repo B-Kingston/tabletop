@@ -19,7 +19,7 @@ The safest path is staged parity:
 1. Establish the mobile foundation and shared contracts.
 2. Ship a narrow, useful MVP around login, groups, recipes, and cooking view.
 3. Add the remaining CRUD domains: media, wines, and nights.
-4. Add interactive and external-service features: TMDB search, spin animation, member chat, AI chat, and recipe generation.
+4. Add interactive and external-service features: OMDb search, spin animation, member chat, AI chat, and recipe generation.
 5. Harden with native quality gates: accessibility, offline-tolerant cache behavior, push-safe backgrounding, release builds, and app store readiness.
 
 The cooking view should be treated as the mobile hero feature. It maps naturally to phones and tablets: full-screen reading, keep-awake, timers, large tap targets, and low-clutter step navigation.
@@ -72,8 +72,8 @@ Current web behavior:
 
 - List media items.
 - Filter by status and type.
-- Search TMDB through backend proxy.
-- Add movie or TV item from TMDB result.
+- Search OMDb through backend proxy.
+- Add movie or TV item from OMDb result.
 - View media details.
 - Update status, rating, review, and planned watch date.
 - Delete media.
@@ -82,7 +82,7 @@ Current web behavior:
 Mobile parity:
 
 - Native media list with filter controls.
-- TMDB search flow optimized for mobile.
+- OMDb search flow optimized for mobile.
 - Add from search result.
 - Detail screen with poster, overview, status, rating, review, and dates.
 - Edit/update actions.
@@ -506,16 +506,16 @@ This allows web to keep `window.dispatchEvent` style handling while mobile route
 - Wine CRUD works end to end.
 - Cost and rating preserve decimal values correctly.
 
-## Stage 6: Media and TMDB
+## Stage 6: Media and OMDb
 
-**Goal:** Reach mobile parity for movie/TV tracking and TMDB search.
+**Goal:** Reach mobile parity for movie/TV tracking and OMDb search.
 
 **Deliverables:**
 
 - Media list.
 - Status/type filtering.
-- TMDB search.
-- Add movie/TV from TMDB.
+- OMDb search.
+- Add movie/TV from OMDb.
 - Media detail.
 - Update status, rating, review, planned watch date.
 - Delete.
@@ -523,10 +523,10 @@ This allows web to keep `window.dispatchEvent` style handling while mobile route
 **Tasks:**
 
 - [ ] Implement media query and mutation hooks.
-- [ ] Implement TMDB search and detail hooks.
+- [ ] Implement OMDb search and detail hooks.
 - [ ] Build media list with status and type controls.
 - [ ] Build media cards with poster, title, type, status, rating, and creator.
-- [ ] Build TMDB search screen or sheet with debounced search.
+- [ ] Build OMDb search screen or sheet with debounced search.
 - [ ] Add movie/TV result normalization.
 - [ ] Build add-from-result action.
 - [ ] Build media detail screen.
@@ -539,7 +539,7 @@ This allows web to keep `window.dispatchEvent` style handling while mobile route
 
 **Acceptance gate:**
 
-- A user can search TMDB, add a result, edit tracking fields, and delete the item on iOS and Android.
+- A user can search OMDb, add a result, edit tracking fields, and delete the item on iOS and Android.
 
 ## Stage 7: Nights and Manual Planning
 
@@ -759,7 +759,7 @@ Includes stages 5-7.
 
 Purpose:
 
-- Add wines, media, TMDB, and manual nights.
+- Add wines, media, OMDb, and manual nights.
 
 Exit criteria:
 
@@ -949,7 +949,7 @@ The mobile client reaches parity when:
 - Users can sign in and sync through Clerk.
 - Users can create, join, open, and leave groups.
 - Users can manage media, recipes, wines, and nights.
-- Users can search TMDB and add media.
+- Users can search OMDb and add media.
 - Users can use the full cooking view with keep-awake and timers.
 - Users can spin and save a night.
 - Users can send member messages.

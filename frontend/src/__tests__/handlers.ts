@@ -94,12 +94,11 @@ export const mediaHandlers = [
         {
           id: 'media-1',
           instanceId: 'inst-1',
-          tmdbId: 550,
+          omdbId: 'tt0137523',
           type: 'movie',
           title: 'Fight Club',
           overview: 'A great movie',
-          posterPath: '/poster.jpg',
-          releaseDate: '1999-10-15',
+          releaseYear: '1999',
           planToWatchDate: null,
           status: 'planning',
           rating: null,
@@ -118,12 +117,11 @@ export const mediaHandlers = [
       data: {
         id: params.mediaId,
         instanceId: 'inst-1',
-        tmdbId: 550,
+        omdbId: 'tt0137523',
         type: 'movie',
         title: 'Fight Club',
         overview: 'A great movie',
-        posterPath: '/poster.jpg',
-        releaseDate: '1999-10-15',
+        releaseYear: '1999',
         planToWatchDate: null,
         status: 'planning',
         rating: null,
@@ -142,11 +140,11 @@ export const mediaHandlers = [
       data: {
         id: 'media-new',
         instanceId: 'inst-1',
-        tmdbId: body.tmdbId,
+        omdbId: body.omdbId,
         type: body.type,
         title: body.title,
         overview: body.overview,
-        posterPath: body.posterPath,
+        releaseYear: body.releaseYear,
         planToWatchDate: null,
         status: 'planning',
         rating: null,
@@ -165,9 +163,11 @@ export const mediaHandlers = [
       data: {
         id: 'media-1',
         instanceId: 'inst-1',
-        tmdbId: 550,
+        omdbId: 'tt0137523',
         type: 'movie',
         title: 'Fight Club',
+        overview: 'A great movie',
+        releaseYear: '1999',
         status: body.status ?? 'planning',
         planToWatchDate: body.planToWatchDate ?? null,
         rating: body.rating ?? null,
@@ -436,49 +436,17 @@ export const memberMessageHandlers = [
   }),
 ]
 
-export const tmdbHandlers = [
-  http.get(`${BASE}/instances/:instanceId/tmdb/search`, ({ request }) => {
+export const omdbHandlers = [
+  http.get(`${BASE}/instances/:instanceId/omdb/search`, ({ request }) => {
     const url = new URL(request.url)
     const q = url.searchParams.get('q')
     return HttpResponse.json({
       data: {
         page: 1,
         results: [
-          { id: 1, title: q ?? 'Test', media_type: 'movie', vote_average: 7.5 },
+          { omdbId: 'tt0137523', title: q ?? 'Test', type: 'movie', releaseYear: '1999' },
         ],
-        total_results: 1,
-        total_pages: 1,
-      },
-      error: null,
-    })
-  }),
-  http.get(`${BASE}/instances/:instanceId/tmdb/movie/:tmdbId`, ({ params }) => {
-    return HttpResponse.json({
-      data: {
-        id: Number(params.tmdbId),
-        title: 'Fight Club',
-        overview: 'A great movie',
-        poster_path: '/poster.jpg',
-        release_date: '1999-10-15',
-        runtime: 139,
-        vote_average: 8.4,
-        genres: [{ id: 18, name: 'Drama' }],
-      },
-      error: null,
-    })
-  }),
-  http.get(`${BASE}/instances/:instanceId/tmdb/tv/:tmdbId`, ({ params }) => {
-    return HttpResponse.json({
-      data: {
-        id: Number(params.tmdbId),
-        name: 'Breaking Bad',
-        overview: 'A great show',
-        poster_path: '/poster.jpg',
-        first_air_date: '2008-01-20',
-        number_of_episodes: 62,
-        number_of_seasons: 5,
-        vote_average: 9.5,
-        genres: [{ id: 18, name: 'Drama' }],
+        totalResults: 1,
       },
       error: null,
     })
@@ -588,6 +556,6 @@ export const allHandlers = [
   ...nightHandlers,
   ...memberMessageHandlers,
   ...chatHandlers,
-  ...tmdbHandlers,
+  ...omdbHandlers,
   ...aiHandlers,
 ]

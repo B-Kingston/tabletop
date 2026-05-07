@@ -37,12 +37,13 @@ func TestMediaService_Create(t *testing.T) {
 
 	_, _, instanceID, userID := setupMediaServiceTestDB(t)
 
-	item, err := svc.Create(ctx, instanceID, userID, 550, "movie", "Fight Club", "A great movie", "/poster.jpg", nil)
+	item, err := svc.Create(ctx, instanceID, userID, "tt0137523", "movie", "Fight Club", "A great movie", "1999")
 	require.NoError(t, err)
 	require.NotNil(t, item)
 	assert.Equal(t, "Fight Club", item.Title)
 	assert.Equal(t, "planning", item.Status)
-	assert.Equal(t, 550, item.TMDBID)
+	assert.Equal(t, "tt0137523", item.OMDBID)
+	assert.Equal(t, "1999", item.ReleaseYear)
 	assert.Equal(t, instanceID, item.InstanceID)
 	assert.Equal(t, userID, item.CreatedByID)
 }
@@ -55,7 +56,7 @@ func TestMediaService_GetByID(t *testing.T) {
 
 	_, _, instanceID, userID := setupMediaServiceTestDB(t)
 
-	item, err := svc.Create(ctx, instanceID, userID, 550, "movie", "Fight Club", "", "", nil)
+	item, err := svc.Create(ctx, instanceID, userID, "tt0137523", "movie", "Fight Club", "", "")
 	require.NoError(t, err)
 
 	found, err := svc.GetByID(ctx, instanceID, item.ID)
@@ -85,9 +86,9 @@ func TestMediaService_List(t *testing.T) {
 
 	_, _, instanceID, userID := setupMediaServiceTestDB(t)
 
-	_, err := svc.Create(ctx, instanceID, userID, 1, "movie", "Movie A", "", "", nil)
+	_, err := svc.Create(ctx, instanceID, userID, "tt0000001", "movie", "Movie A", "", "")
 	require.NoError(t, err)
-	_, err = svc.Create(ctx, instanceID, userID, 2, "tv", "TV Show B", "", "", nil)
+	_, err = svc.Create(ctx, instanceID, userID, "tt0000002", "tv", "TV Show B", "", "")
 	require.NoError(t, err)
 
 	items, err := svc.List(ctx, instanceID, "", "")
@@ -108,7 +109,7 @@ func TestMediaService_Update(t *testing.T) {
 
 	_, _, instanceID, userID := setupMediaServiceTestDB(t)
 
-	item, err := svc.Create(ctx, instanceID, userID, 550, "movie", "Fight Club", "", "", nil)
+	item, err := svc.Create(ctx, instanceID, userID, "tt0137523", "movie", "Fight Club", "", "")
 	require.NoError(t, err)
 
 	rating := float32(9.0)
@@ -127,7 +128,7 @@ func TestMediaService_Update_PartialFields(t *testing.T) {
 
 	_, _, instanceID, userID := setupMediaServiceTestDB(t)
 
-	item, err := svc.Create(ctx, instanceID, userID, 550, "movie", "Fight Club", "", "", nil)
+	item, err := svc.Create(ctx, instanceID, userID, "tt0137523", "movie", "Fight Club", "", "")
 	require.NoError(t, err)
 
 	updated, err := svc.Update(ctx, instanceID, item.ID, userID, "watching", nil, "", nil)
@@ -158,7 +159,7 @@ func TestMediaService_Delete(t *testing.T) {
 
 	_, _, instanceID, userID := setupMediaServiceTestDB(t)
 
-	item, err := svc.Create(ctx, instanceID, userID, 550, "movie", "Fight Club", "", "", nil)
+	item, err := svc.Create(ctx, instanceID, userID, "tt0137523", "movie", "Fight Club", "", "")
 	require.NoError(t, err)
 
 	err = svc.Delete(ctx, instanceID, item.ID)

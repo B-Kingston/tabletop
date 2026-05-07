@@ -3,17 +3,20 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { mediaKeys } from '@tabletop/shared'
 
-import type { ApiResponse, MediaItem } from '@tabletop/shared'
+import type { ApiResponse, MediaItem as SharedMediaItem } from '@tabletop/shared'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
+export type MobileMediaItem = SharedMediaItem & {
+  omdbId?: string
+  releaseYear?: string
+}
+
 interface AddMediaPayload {
-  tmdbId: number
+  omdbId: string
   type: 'movie' | 'tv'
   title: string
-  overview?: string
-  posterPath?: string
-  releaseDate?: string
+  releaseYear?: string
 }
 
 interface UpdateMediaPayload {
@@ -29,13 +32,13 @@ interface UpdateMediaPayload {
  * Fetch all media for an instance, optionally filtered by status and/or type.
  */
 export function useMedia(instanceId: string, status?: string, type?: string) {
-  return useQuery<MediaItem[], Error>({
+  return useQuery<MobileMediaItem[], Error>({
     queryKey: mediaKeys.list(instanceId, status, type),
     queryFn: async () => {
       const params: Record<string, string> = {}
       if (status) params.status = status
       if (type) params.type = type
-      const { data } = await api.get<ApiResponse<MediaItem[]>>(
+      const { data } = await api.get<ApiResponse<MobileMediaItem[]>>(
         `/instances/${instanceId}/media`,
         { params },
       )
@@ -49,10 +52,10 @@ export function useMedia(instanceId: string, status?: string, type?: string) {
  * Fetch a single media item by ID.
  */
 export function useMediaItem(instanceId: string, mediaId: string) {
-  return useQuery<MediaItem, Error>({
+  return useQuery<MobileMediaItem, Error>({
     queryKey: mediaKeys.detail(instanceId, mediaId),
     queryFn: async () => {
-      const { data } = await api.get<ApiResponse<MediaItem>>(
+      const { data } = await api.get<ApiResponse<MobileMediaItem>>(
         `/instances/${instanceId}/media/${mediaId}`,
       )
       return data.data
@@ -64,14 +67,14 @@ export function useMediaItem(instanceId: string, mediaId: string) {
 // ── Mutations ─────────────────────────────────────────────────────────────
 
 /**
- * Add a new media item (from TMDB search result).
+ * Add a new media item (from OMDb search result).
  */
 export function useAddMedia(instanceId: string) {
   const queryClient = useQueryClient()
 
-  return useMutation<MediaItem, Error, AddMediaPayload>({
+  return useMutation<MobileMediaItem, Error, AddMediaPayload>({
     mutationFn: async (payload) => {
-      const { data } = await api.post<ApiResponse<MediaItem>>(
+      const { data } = await api.post<ApiResponse<MobileMediaItem>>(
         `/instances/${instanceId}/media`,
         payload,
       )
@@ -95,12 +98,12 @@ export function useUpdateMedia(instanceId: string) {
   const queryClient = useQueryClient()
 
   return useMutation<
-    MediaItem,
+    MobileMediaItem,
     Error,
     { mediaId: string; payload: UpdateMediaPayload }
   >({
     mutationFn: async ({ mediaId, payload }) => {
-      const { data } = await api.patch<ApiResponse<MediaItem>>(
+      const { data } = await api.patch<ApiResponse<MobileMediaItem>>(
         `/instances/${instanceId}/media/${mediaId}`,
         payload,
       )

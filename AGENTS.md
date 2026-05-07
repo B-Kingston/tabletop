@@ -7,7 +7,7 @@ All AI agents and human developers must follow this document. It is non-negotiab
 - **Frontend:** React 18+, TypeScript (strict), Vite, Tailwind CSS, shadcn/ui primitives, TanStack Query, TanStack Router, Zustand, Framer Motion
 - **Backend:** Go 1.22+, Gin, GORM, PostgreSQL (NeonDB), Redis
 - **Auth:** Clerk (magic code email verification)
-- **External:** TMDB API, OpenAI API (server-side proxy with rate limiting)
+- **External:** OMDb API, OpenAI API (server-side proxy with rate limiting)
 - **Editor:** Plate (Slate-based rich text) for recipe editing, serialized to markdown
 
 ## Project Directory Map (LIVING DOCUMENT — KEEP UPDATED)
@@ -19,9 +19,7 @@ All agents MUST consult this map before creating, moving, or deleting files. If 
 ```
 tabletop/
 ├── .env                          # Production env (gitignored)
-├── .env.dev                      # Dev env (gitignored)
-├── .env.dev.example              # Dev env template
-├── .env.example                  # Production env template
+├── .env.staging                  # Staging dev env (gitignored)
 ├── .gitignore
 ├── AGENTS.md                     # This document
 ├── Makefile                      # Shortcuts: dev, test, build, lint, migrate-*
@@ -31,8 +29,8 @@ tabletop/
 ├── CLAUDE.md
 ├── package.json                  # Root workspace config (npm workspaces)
 ├── docker-compose.yml            # Postgres 16 + Redis 7
-├── run.sh                        # Frontend Docker build → Nginx on :3000
-├── dev.sh                        # Native backend + frontend, Docker infra only
+├── run.sh                        # Frontend Docker build → Nginx on :3000, points at deployed backend
+├── dev.sh                        # Native backend + frontend; defaults to staging services + real auth
 ├── backend.sh                    # Fly.io deploy / logs / secrets / migrate
 ├── docs/                         # Design specs and implementation plans
 │   ├── mobile/
@@ -111,11 +109,11 @@ backend/
 │   │   ├── auth/                 # Auth routes
 │   │   ├── chat/                 # Chat session/message handlers
 │   │   ├── instances/            # Instance CRUD + membership
-│   │   ├── media/                # Media (TMDB-linked) handlers
+│   │   ├── media/                # Media (OMDb-linked) handlers
 │   │   ├── messages/             # Persisted realtime instance member chat handlers
 │   │   ├── nights/               # Game-night handlers
 │   │   ├── recipes/              # Recipe handlers
-│   │   ├── tmdb/                 # TMDB proxy/search handlers
+│   │   ├── omdb/                 # OMDb proxy/search handlers
 │   │   ├── webhooks/             # Clerk webhook handler (user sync)
 │   │   └── wines/                # Wine handlers
 │   ├── middleware/               # Auth, CORS, instance membership
@@ -159,7 +157,6 @@ frontend/
 │   ├── stores/                   # Zustand stores (auth, instance, ui)
 │   └── types/                    # Shared TypeScript types / DTOs
 ├── .env.local                    # Vite local env (gitignored)
-├── .env.example
 ├── Dockerfile                    # Multi-stage Node → Nginx
 ├── nginx.conf
 ├── index.html
@@ -296,7 +293,7 @@ After any work is completed — whether a bug fix, feature, refactor, or depende
      - **Docker build only:** `docker build --no-cache -t tabletop-web frontend/` — verifies the full Vite → Nginx Docker build succeeds. Do **not** run `docker run` afterwards.
      - **Native build (faster):** `cd frontend && npm run build` — verifies Vite production build succeeds without Docker. Do **not** run `npm run dev` afterwards.
    - **Backend** — Build and deploy to Fly.io: `./backend.sh` (covers `fly deploy`, logs, secrets, and migrations).
-   - **Full local dev (backend + frontend):** `./dev.sh` — starts Docker infra (Postgres, Redis), native backend with Air hot-reload, and Vite dev server. Use this only for **interactive local development and smoke-testing** inside a dedicated terminal. Do **not** run this from the AI toolchain (it blocks indefinitely).
+   - **Full local dev (backend + frontend):** `./dev.sh` — starts the native backend with Air hot-reload and the Vite dev server using staging services by default; local Docker Postgres/Redis start only when the selected env file points at localhost. Use this only for **interactive local development and smoke-testing** inside a dedicated terminal. Do **not** run this from the AI toolchain (it blocks indefinitely).
 3. **Verify the build succeeds before declaring the task complete.** A failing build or deploy is a blocking issue — fix it immediately. Do not skip verification because the change "seems small."
 
 ## Debugging Network Traces (.har Files)

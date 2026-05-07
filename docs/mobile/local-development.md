@@ -10,7 +10,7 @@ This is the definitive guide for running the Tabletop mobile app (Expo React Nat
 - **Node.js 18+ and npm** (install via `nvm` or https://nodejs.org)
 - **Xcode** (from Mac App Store, ~10GB — needed for iOS Simulator)
 - **Android Studio** (for Android Emulator; https://developer.android.com/studio)
-- **Docker Desktop** (for the local backend — Postgres + Redis)
+- **Docker Desktop** (only for local mock backend dependencies — Postgres + Redis)
 - **Fly.io CLI** (optional — only if you want to target a staging backend)
 
 > **Tip:** Run `xcode-select --install` first if you don't have the Xcode command-line tools.
@@ -22,8 +22,10 @@ This is the definitive guide for running the Tabletop mobile app (Expo React Nat
 For experienced developers who already have all prerequisites installed:
 
 ```bash
-# 1. Start the backend (Docker infra + Go API)
-cp .env.dev.example .env.dev && ./dev.sh
+# 1. Start the local backend against staging services
+cp .env.staging.example .env.staging
+# Fill in staging keys and service URLs, then:
+./dev.sh
 
 # 2. In a new terminal, start the mobile app
 cd mobile
@@ -54,23 +56,35 @@ This is an npm workspaces monorepo. `npm install` at the root installs dependenc
 
 The mobile app needs a running Go backend. You have three options.
 
-### Option A: Local Backend with Dev Auth (fastest, recommended for UI dev)
+### Option A: Local Backend Against Staging Services (default)
 
-Uses fake auth — no Clerk/TMDB/OpenAI keys needed.
+Uses real Clerk auth and staging service dependencies.
+
+```bash
+cp .env.staging.example .env.staging
+# Fill in staging Clerk, DATABASE_URL, REDIS_URL, OMDb, and OpenAI values.
+./dev.sh
+```
+
+The backend starts at `http://localhost:8080`, but it connects to staging Postgres/Redis from `.env.staging`. The mobile app shows real sign-in/sign-up screens and the backend verifies real Clerk JWTs.
+
+### Option B: Local Backend with Mock Auth
+
+Uses fake auth — no Clerk/OMDb/OpenAI keys needed.
 
 ```bash
 # Copy the dev env template (it already has DEV_SKIP_AUTH=true)
 cp .env.dev.example .env.dev
 
 # Start Docker infra + backend
-./dev.sh
+./dev.sh .env.dev --mock-auth
 ```
 
-The backend starts at `http://localhost:8080`. Auth is bypassed — the app signs in automatically with a fake user. This is perfect for UI/UX development. TMDB search and AI chat won't work (no real keys), but all CRUD operations and instance management will.
+The backend starts at `http://localhost:8080`. Auth is bypassed — the app signs in automatically with a fake user. This is perfect for UI/UX development. OMDb search and AI chat won't work (no real keys), but all CRUD operations and instance management will.
 
-### Option B: Local Backend with Real Auth
+### Option C: Local Backend with Real Auth and Local DB
 
-Full-feature testing with real Clerk, TMDB, and OpenAI keys.
+Full-feature testing with real Clerk, OMDb, and OpenAI keys.
 
 1. Copy and edit the dev env:
 
@@ -84,21 +98,21 @@ Full-feature testing with real Clerk, TMDB, and OpenAI keys.
    DEV_SKIP_AUTH=false
    CLERK_SECRET_KEY=sk_test_...       # From Clerk Dashboard
    CLERK_PUBLISHABLE_KEY=pk_test_...  # From Clerk Dashboard
-   TMDB_API_KEY=...                   # From TMDB
+   OMDB_API_KEY=...                   # From OMDb
    OPENAI_API_KEY=sk-...              # From OpenAI
    ```
 
 3. Start the backend:
 
    ```bash
-   ./dev.sh
+   ./dev.sh .env.dev --with-auth
    ```
 
 4. In `mobile/.env`, make sure `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` is set to your real Clerk publishable key.
 
-The app will show real sign-in/sign-up screens. Clerk magic-code emails work in the simulator (use any email you control). The backend verifies real Clerk JWTs. TMDB search and AI chat are fully functional.
+The app will show real sign-in/sign-up screens. Clerk magic-code emails work in the simulator (use any email you control). The backend verifies real Clerk JWTs. OMDb search and AI chat are fully functional.
 
-### Option C: Staging Backend
+### Option D: Deployed Staging Backend
 
 Target a deployed staging backend (e.g., on Fly.io) instead of running locally.
 
@@ -271,17 +285,28 @@ You can also run the app on a real iPhone or Android device via Expo Go.
 
 ## 6. Auth Modes
 
+### Staging Auth (Default)
+
+When `DEV_SKIP_AUTH=false` in `.env.staging`:
+
+- The backend verifies real Clerk JWTs against Clerk's JWKS endpoint
+- The backend uses staging Postgres/Redis service URLs from `.env.staging`
+- The mobile app shows real Clerk sign-in/sign-up screens
+- Sign-in uses Clerk's magic code (email verification) flow
+- Set `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` in `mobile/.env` to your real Clerk publishable key
+- **Available for:** Full end-to-end testing including auth flows, OMDb search, and AI recipe generation
+
 ### Dev Auth (No Real Keys Needed)
 
 When `DEV_SKIP_AUTH=true` in backend `.env.dev`:
 
 - The backend skips Clerk JWT verification entirely
 - The app signs in automatically with a synthetic dev user
-- No real Clerk, TMDB, or OpenAI keys are required
+- No real Clerk, OMDb, or OpenAI keys are required
 - **Perfect for:** UI/UX development, layout work, component styling, navigation testing
-- **Not available for:** Testing real authentication flows, TMDB search, or AI chat
+- **Not available for:** Testing real authentication flows, OMDb search, or AI chat
 
-### Real Auth (Real Keys Required)
+### Local DB with Real Auth
 
 When `DEV_SKIP_AUTH=false` in backend `.env.dev`:
 
@@ -289,12 +314,12 @@ When `DEV_SKIP_AUTH=false` in backend `.env.dev`:
 - The mobile app shows real Clerk sign-in/sign-up screens
 - Sign-in uses Clerk's magic code (email verification) flow
 - Set `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` in `mobile/.env` to your real Clerk publishable key
-- **Available for:** Full end-to-end testing including auth flows, TMDB search, and AI recipe generation
+- **Available for:** Full end-to-end testing including auth flows, OMDb search, and AI recipe generation
 
 **How to switch between modes:**
 
-1. Change `DEV_SKIP_AUTH` in `.env.dev`
-2. Restart `./dev.sh` (stops backend + frontend, starts fresh)
+1. Choose the env file: `.env.staging` for default staging services, or `.env.dev` for local mock/local DB work.
+2. Start with `./dev.sh`, `./dev.sh .env.dev --mock-auth`, or `./dev.sh .env.dev --with-auth`.
 3. Restart the mobile app: `cd mobile && npx expo start --clear`
 
 ---
@@ -409,7 +434,7 @@ cd mobile && eas build --profile production
 ./dev.sh
 
 # Check backend health
-curl http://localhost:8080/v1/health
+curl http://localhost:8080/health
 
 # Stop Docker services
 docker compose down

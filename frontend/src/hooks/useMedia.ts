@@ -31,12 +31,11 @@ export function useAddMedia(instanceId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (input: {
-      tmdbId: number
-      type: string
+      omdbId: string
+      type: 'movie' | 'tv'
       title: string
       overview: string
-      posterPath: string
-      releaseDate?: string
+      releaseYear: string
     }) => {
       const { data } = await api.post<{ data: MediaItem }>(`/instances/${instanceId}/media`, input)
       return data.data

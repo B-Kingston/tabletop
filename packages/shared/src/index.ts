@@ -6,7 +6,7 @@ export {
   nightsKeys,
   chatSessionsKeys,
   memberMessagesKeys,
-  tmdbKeys,
+  omdbKeys,
 } from './queryKeys/index.js'
 
 export type {
@@ -22,10 +22,10 @@ export type {
   ChatMessage,
   MemberMessage,
   Night,
-  TMDBSearchResult,
-  TMDBSearchResponse,
-  TMDBMovieDetails,
-  TMDBTVDetails,
+  OMDBRating,
+  OMDBDetail,
+  OMDBSearchResult,
+  OMDBSearchResponse,
   ApiResponse,
   PaginatedResponse,
 } from './types/index.js'

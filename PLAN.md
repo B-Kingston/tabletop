@@ -9,8 +9,8 @@ This document tracks what remains to build after the foundation commit (`82f5c73
 ### Backend (29 Go source files)
 - **Models:** All 11 models complete (User, Instance, InstanceMembership, MediaItem, Wine, Recipe, Ingredient, RecipeStep, RecipeTag, ChatSession, ChatMessage). All auto-migrated.
 - **Repositories:** UserRepository and InstanceRepository complete with tests. **Missing:** Media, Wine, Recipe, Chat repositories.
-- **Services:** InstanceService complete with tests. TMDBService and OpenAIService **exist but are not wired** into main.go (no handlers, no routes). **Missing:** Media, Wine, Recipe, Chat services.
-- **Handlers:** AuthHandler (clerk-sync + /me) and InstanceHandler (CRUD + join/leave/members) complete. **Missing:** Media, Wine, Recipe, Chat, TMDB proxy, OpenAI proxy handlers.
+- **Services:** InstanceService complete with tests. OMDbService and OpenAIService **exist but are not wired** into main.go (no handlers, no routes). **Missing:** Media, Wine, Recipe, Chat services.
+- **Handlers:** AuthHandler (clerk-sync + /me) and InstanceHandler (CRUD + join/leave/members) complete. **Missing:** Media, Wine, Recipe, Chat, OMDb proxy, OpenAI proxy handlers.
 - **Middleware:** CORS (complete), RequireAuth (**JWKS keyfunc returns nil — signature verification is a TODO**), RequireInstanceMembership (complete).
 - **Utilities:** `utils/scopes.go` with `ForInstance` GORM scope — ready but unused by domain repos.
 - **Infrastructure:** Config, Database (PostgreSQL + auto-migrate), Dockerfile — all complete.
@@ -61,13 +61,13 @@ Goal: All CRUD endpoints for media, recipes, wines, and chat.
 - [ ] `backend/internal/redis/redis.go` — client wrapper with health check
 - [ ] Wire Redis into `main.go` and config
 - [ ] Update `docker-compose.yml` to ensure Redis is ready
-- [ ] Redis will serve three purposes: rate limiting (1.7), TMDB caching (1.6), WebSocket pub/sub (1.8)
+- [ ] Redis will serve three purposes: rate limiting (1.7), OMDb caching (1.6), WebSocket pub/sub (1.8)
 
 ### 1.2 Media Module
 - [ ] `backend/internal/repositories/media.go` — MediaRepository **interface** + GORM implementation (per AGENTS.md DI requirement)
-- [ ] `backend/internal/services/media.go` — MediaService with TMDB integration
+- [ ] `backend/internal/services/media.go` — MediaService with OMDb integration
 - [ ] `backend/internal/handlers/media/media.go` — HTTP handlers:
-  - `POST /instances/:instance_id/media` — add from TMDB search result
+  - `POST /instances/:instance_id/media` — add from OMDb search result
   - `GET /instances/:instance_id/media` — list with filters (status, type)
   - `GET /instances/:instance_id/media/:media_id` — get detail
   - `PATCH /instances/:instance_id/media/:media_id` — update status, rating, review
@@ -111,16 +111,16 @@ Goal: All CRUD endpoints for media, recipes, wines, and chat.
 - [ ] `POST /instances/:instance_id/chat/generate-recipe` — special endpoint that calls OpenAI with RecipeSystemPrompt and returns structured recipe JSON
 - [ ] Tests for chat handler + service
 
-### 1.6 TMDB Proxy Endpoints
-> **Note:** `services/tmdb.go` already implements SearchMulti, SearchMovies, SearchTV, and GetMovieDetails. Only handler wiring + caching + missing endpoint needed.
+### 1.6 OMDb Proxy Endpoints
+> **Note:** `services/omdb.go` already implements SearchMulti, SearchMovies, SearchTV, and GetMovieDetails. Only handler wiring + caching + missing endpoint needed.
 
-- [ ] Create TMDB handler to wire the existing TMDBService into routes
-- [ ] `GET /instances/:instance_id/tmdb/search?q=...&page=...&type=...` — proxy search through backend
-- [ ] `GET /instances/:instance_id/tmdb/movie/:tmdb_id` — get movie details
-- [ ] `GET /instances/:instance_id/tmdb/tv/:tmdb_id` — get TV details (**missing: `GetTVDetails()` not implemented in existing service**)
-- [ ] Add `GetTVDetails()` to `services/tmdb.go`
+- [ ] Create OMDb handler to wire the existing OMDbService into routes
+- [ ] `GET /instances/:instance_id/omdb/search?q=...&page=...&type=...` — proxy search through backend
+- [ ] `GET /instances/:instance_id/omdb/movie/:omdb_id` — get movie details
+- [ ] `GET /instances/:instance_id/omdb/tv/:omdb_id` — get TV details (**missing: `GetTVDetails()` not implemented in existing service**)
+- [ ] Add `GetTVDetails()` to `services/omdb.go`
 - [ ] Add Redis caching layer (1 hour TTL) for search and detail responses
-- [ ] Instantiate TMDBService in `main.go` and inject into handler
+- [ ] Instantiate OMDbService in `main.go` and inject into handler
 
 ### 1.7 OpenAI Proxy Endpoints
 > **Note:** `services/openai.go` already implements ChatCompletion and ChatCompletionStream (SSE). Rate limiting is a stub (`CheckRateLimit` returns nil). Only handler wiring + Redis rate limiting needed.
@@ -189,7 +189,7 @@ Goal: Functional navigation, auth flow, and typed API layer.
 - [ ] `frontend/src/hooks/useRecipes.ts` — CRUD
 - [ ] `frontend/src/hooks/useWines.ts` — CRUD
 - [ ] `frontend/src/hooks/useChat.ts` — sessions, messages, send message mutation
-- [ ] `frontend/src/hooks/useTMDB.ts` — search, get details
+- [ ] `frontend/src/hooks/useOMDb.ts` — search, get details
 - [ ] `frontend/src/hooks/useAI.ts` — generate recipe, chat stream
 
 ### 2.4 Global State (Zustand)
@@ -218,7 +218,7 @@ Goal: Functional navigation, auth flow, and typed API layer.
 ### 3.3 Media Pages
 - [ ] `frontend/src/pages/MediaList.tsx` — grid of media cards, status filter, type filter, search bar
 - [ ] `frontend/src/components/media/MediaCard.tsx` — poster, title, status badge, rating
-- [ ] `frontend/src/components/media/MediaSearchModal.tsx` — TMDB search with debounce, add-to-instance flow
+- [ ] `frontend/src/components/media/MediaSearchModal.tsx` — OMDb search with debounce, add-to-instance flow
 - [ ] `frontend/src/pages/MediaDetail.tsx` — full info, edit status/rating/review
 
 ### 3.4 Recipe Pages (Hero Feature)
@@ -257,8 +257,8 @@ Goal: Functional navigation, auth flow, and typed API layer.
 ### 4.1 Backend
 - [ ] Table-driven tests for all new handlers, services, repositories
 - [ ] Integration tests for cross-instance access (must return 403)
-- [ ] Mock TMDB and OpenAI in tests (httptest)
-- [ ] Add tests for existing TMDB service (currently has none)
+- [ ] Mock OMDb and OpenAI in tests (httptest)
+- [ ] Add tests for existing OMDb service (currently has none)
 - [ ] Add tests for existing OpenAI service (currently has none)
 - [ ] Target: >70% coverage on business logic
 - [ ] Add `make test` and `make test-coverage` to Makefile
@@ -307,10 +307,10 @@ Goal: Functional navigation, auth flow, and typed API layer.
 1. **Phase 0: Fix critical bugs** — JWKS key fetching, instance handler user ID resolution, repository interface refactor
 2. **Backend repositories** for media, recipe, wine, chat (interfaces + GORM impl)
 3. **Backend handlers** for media, recipe, wine (CRUD only — no AI yet)
-4. **Wire existing TMDB + OpenAI services** into handlers/routes + Redis
+4. **Wire existing OMDb + OpenAI services** into handlers/routes + Redis
 5. **Frontend router + types + API wiring** (unblock page development)
 6. **Frontend Dashboard + Instance pages** (auth flow end-to-end)
-7. **Frontend Media pages + TMDB search** (first full feature vertical)
+7. **Frontend Media pages + OMDb search** (first full feature vertical)
 8. **Frontend Recipe pages + Cooking View** (hero feature)
 9. **Backend chat + Frontend Chat page**
 10. **WebSocket integration** for real-time chat

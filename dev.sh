@@ -1,20 +1,22 @@
 #!/bin/bash
 
-# Run Tabletop in local dev mode (native backend + frontend, Docker infra)
+# Run Tabletop in local dev mode (native backend + frontend).
 # Usage:
-#   ./dev.sh                     Mock auth (default, no real keys needed)
-#   ./dev.sh [env-file]          Use a different env file
-#   ./dev.sh --with-auth          Real Clerk + TMDB + OpenAI auth
-#   ./dev.sh [env-file] --with-auth   Custom env file + real auth
+#   ./dev.sh                         Staging env + real Clerk auth (default)
+#   ./dev.sh [env-file]              Custom env file + real Clerk auth
 
 
-ENV_FILE=".env.dev"
-WITH_AUTH=false
+ENV_FILE=".env.staging"
+WITH_AUTH=true
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --with-auth)
       WITH_AUTH=true
+      shift
+      ;;
+    --mock-auth)
+      WITH_AUTH=false
       shift
       ;;
     *)
@@ -30,30 +32,31 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-if ! docker info >/dev/null 2>&1; then
-  echo -e "${RED}❌  Docker is not running. Start Docker first.${NC}"
-  exit 1
-fi
-
 if [ ! -f "$ENV_FILE" ]; then
   echo -e "${RED}❌  $ENV_FILE not found.${NC}"
-  echo -e "${YELLOW}    Run: cp .env.dev.example $ENV_FILE${NC}"
+  if [ "$ENV_FILE" = ".env.staging" ]; then
+    echo -e "${YELLOW}    Create .env.staging with staging service values.${NC}"
+  else
+    echo -e "${YELLOW}    Create $ENV_FILE with the appropriate service values.${NC}"
+  fi
   exit 1
 fi
 
 echo -e "${YELLOW}🚀  Starting Tabletop dev environment with $ENV_FILE...${NC}"
 
 # Load env vars into current shell so child processes inherit them
-set -a
-source "$ENV_FILE"
-set +a
+while IFS= read -r line || [ -n "$line" ]; do
+  [[ "$line" =~ ^[[:space:]]*$ || "$line" =~ ^[[:space:]]*# ]] && continue
+  [[ "$line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] || continue
+  export "$line"
+done < "$ENV_FILE"
 
 # ---- Real auth validation ----
 if $WITH_AUTH; then
   echo ""
   echo -e "${YELLOW}🔐  Starting with REAL Clerk authentication.${NC}"
   echo -e "${YELLOW}    Ensure your $ENV_FILE has real keys (not dev dummy values).${NC}"
-  echo -e "${YELLOW}    See .env.dev.example → [REAL KEYS MODE] section for setup.${NC}"
+  echo -e "${YELLOW}    Use .env.staging for staging service values.${NC}"
   echo ""
 
   # Force DEV_SKIP_AUTH off (export so Go backend sees it)
@@ -77,8 +80,8 @@ if $WITH_AUTH; then
   if [ -z "$CLERK_PUBLISHABLE_KEY" ] || [ "$CLERK_PUBLISHABLE_KEY" = "pk_test_dev" ]; then
     MISSING+=("CLERK_PUBLISHABLE_KEY (should be pk_test_... from Clerk Dashboard → API Keys)")
   fi
-  if [ -z "$TMDB_API_KEY" ] || [ "$TMDB_API_KEY" = "dev" ]; then
-    MISSING+=("TMDB_API_KEY (should be from https://www.themoviedb.org/settings/api)")
+  if [ -z "$OMDB_API_KEY" ] || [ "$OMDB_API_KEY" = "dev" ]; then
+    MISSING+=("OMDB_API_KEY (should be from https://www.omdbapi.com/apikey.aspx)")
   fi
 
   if [ ${#MISSING[@]} -gt 0 ]; then
@@ -90,10 +93,9 @@ if $WITH_AUTH; then
     done
     echo ""
     echo -e "${YELLOW}    To fix: edit $ENV_FILE and replace the dummy values${NC}"
-    echo -e "${YELLOW}    with your real keys.  See .env.dev.example for details.${NC}"
+    echo -e "${YELLOW}    with your real keys.${NC}"
     echo ""
-    echo -e "${YELLOW}    Or run without --with-auth to use mock auth:${NC}"
-    echo -e "${YELLOW}      ./dev.sh${NC}"
+    echo -e "${YELLOW}    Or pass --mock-auth with an env file configured for local services.${NC}"
     echo ""
     exit 1
   fi
@@ -102,23 +104,52 @@ if $WITH_AUTH; then
   echo ""
 fi
 
-# Start infrastructure (Postgres + Redis)
-echo -e "${YELLOW}🐳  Starting Docker services (db, redis)...${NC}"
-docker compose up -d db redis
+LOCAL_DB=false
+LOCAL_REDIS=false
 
-# Wait for Postgres
-echo -e "${YELLOW}⏳  Waiting for Postgres...${NC}"
-RETRIES=0
-MAX_RETRIES=30
-until docker exec tabletop-db pg_isready -U dev -d tabletop > /dev/null 2>&1; do
-  RETRIES=$((RETRIES + 1))
-  if [ $RETRIES -ge $MAX_RETRIES ]; then
-    echo -e "${RED}❌  Postgres didn't start after ${MAX_RETRIES}s. Check: docker logs tabletop-db${NC}"
+if [[ "${DATABASE_URL:-}" == *"@localhost:"* || "${DATABASE_URL:-}" == *"@127.0.0.1:"* ]]; then
+  LOCAL_DB=true
+fi
+
+if [[ "${REDIS_URL:-}" == redis://localhost:* || "${REDIS_URL:-}" == redis://127.0.0.1:* ]]; then
+  LOCAL_REDIS=true
+fi
+
+if $LOCAL_DB || $LOCAL_REDIS; then
+  if ! docker info >/dev/null 2>&1; then
+    echo -e "${RED}❌  Docker is not running, but $ENV_FILE points at local Docker infrastructure.${NC}"
     exit 1
   fi
-  sleep 1
-done
-echo -e "${GREEN}✅  Postgres is ready${NC}"
+
+  SERVICES=()
+  if $LOCAL_DB; then
+    SERVICES+=("db")
+  fi
+  if $LOCAL_REDIS; then
+    SERVICES+=("redis")
+  fi
+
+  echo -e "${YELLOW}🐳  Starting local Docker services (${SERVICES[*]})...${NC}"
+  docker compose up -d "${SERVICES[@]}"
+else
+  echo -e "${GREEN}✅  Using remote staging infrastructure from $ENV_FILE${NC}"
+fi
+
+# Wait for Postgres
+if $LOCAL_DB; then
+  echo -e "${YELLOW}⏳  Waiting for local Postgres...${NC}"
+  RETRIES=0
+  MAX_RETRIES=30
+  until docker exec tabletop-db pg_isready -U dev -d tabletop > /dev/null 2>&1; do
+    RETRIES=$((RETRIES + 1))
+    if [ $RETRIES -ge $MAX_RETRIES ]; then
+      echo -e "${RED}❌  Postgres didn't start after ${MAX_RETRIES}s. Check: docker logs tabletop-db${NC}"
+      exit 1
+    fi
+    sleep 1
+  done
+  echo -e "${GREEN}✅  Local Postgres is ready${NC}"
+fi
 
 # Install frontend deps if needed
 if [ ! -d "frontend/node_modules" ]; then
@@ -148,6 +179,8 @@ trap cleanup INT TERM EXIT
 # Export VITE_* vars so Vite picks them up without a frontend/.env.local file
 export VITE_DEV_SKIP_AUTH="${DEV_SKIP_AUTH:-true}"
 export VITE_API_URL="${VITE_API_URL:-http://localhost:8080}"
+export VITE_CLERK_PUBLISHABLE_KEY="${VITE_CLERK_PUBLISHABLE_KEY:-${CLERK_PUBLISHABLE_KEY:-}}"
+export VITE_CLERK_JWT_TEMPLATE="${VITE_CLERK_JWT_TEMPLATE:-${CLERK_JWT_TEMPLATE:-${CLERK_AUDIENCE:-}}}"
 
 # Detect air for hot-reload, fall back to go run
 if command -v air >/dev/null 2>&1; then

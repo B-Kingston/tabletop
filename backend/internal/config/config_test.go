@@ -13,7 +13,7 @@ func TestLoad_UsesDefaults(t *testing.T) {
 	os.Clearenv()
 	os.Setenv("DATABASE_URL", "postgres://test")
 	os.Setenv("CLERK_SECRET_KEY", "sk_test")
-	os.Setenv("TMDB_API_KEY", "tmdb_test")
+	os.Setenv("OMDB_API_KEY", "omdb_test")
 
 	cfg := Load()
 
@@ -29,7 +29,7 @@ func TestLoad_OverridesWithEnv(t *testing.T) {
 	os.Setenv("ENVIRONMENT", "production")
 	os.Setenv("DATABASE_URL", "postgres://test")
 	os.Setenv("CLERK_SECRET_KEY", "sk_test")
-	os.Setenv("TMDB_API_KEY", "tmdb_test")
+	os.Setenv("OMDB_API_KEY", "omdb_test")
 	os.Setenv("FRONTEND_URL", "https://app.example.com")
 
 	cfg := Load()
@@ -43,7 +43,7 @@ func TestLoad_OverridesWithEnv(t *testing.T) {
 func TestValidate_MissingDatabaseURL(t *testing.T) {
 	cfg := &Config{
 		ClerkSecretKey: "sk_test",
-		TMDBAPIKey:     "tmdb_test",
+		OMDBAPIKey:     "omdb_test",
 	}
 
 	err := cfg.Validate()
@@ -54,7 +54,7 @@ func TestValidate_MissingDatabaseURL(t *testing.T) {
 func TestValidate_MissingClerkSecretKey(t *testing.T) {
 	cfg := &Config{
 		DatabaseURL: "postgres://test",
-		TMDBAPIKey:  "tmdb_test",
+		OMDBAPIKey:  "omdb_test",
 	}
 
 	err := cfg.Validate()
@@ -62,28 +62,28 @@ func TestValidate_MissingClerkSecretKey(t *testing.T) {
 	assert.Contains(t, err.Error(), "CLERK_SECRET_KEY")
 }
 
-func TestValidate_MissingTMDBAPIKey(t *testing.T) {
+func TestValidate_MissingOMDBAPIKey(t *testing.T) {
 	cfg := &Config{
 		DatabaseURL:    "postgres://test",
 		ClerkSecretKey: "sk_test",
-		ClerkJWKSURL:  "https://test.clerk.accounts.dev/.well-known/jwks.json",
+		ClerkJWKSURL:   "https://test.clerk.accounts.dev/.well-known/jwks.json",
 		ClerkIssuer:    "https://clerk.test.com",
 		ClerkAudience:  "test-audience",
 	}
 
 	err := cfg.Validate()
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "TMDB_API_KEY")
+	assert.Contains(t, err.Error(), "OMDB_API_KEY")
 }
 
 func TestValidate_Success(t *testing.T) {
 	cfg := &Config{
 		DatabaseURL:    "postgres://test",
 		ClerkSecretKey: "sk_test",
-		ClerkJWKSURL:  "https://test.clerk.accounts.dev/.well-known/jwks.json",
+		ClerkJWKSURL:   "https://test.clerk.accounts.dev/.well-known/jwks.json",
 		ClerkIssuer:    "https://clerk.test.com",
 		ClerkAudience:  "test-audience",
-		TMDBAPIKey:     "tmdb_test",
+		OMDBAPIKey:     "omdb_test",
 	}
 
 	err := cfg.Validate()
@@ -117,9 +117,9 @@ func TestValidate_MissingClerkIssuer(t *testing.T) {
 	cfg := &Config{
 		DatabaseURL:    "postgres://test",
 		ClerkSecretKey: "sk_test",
-		ClerkJWKSURL:  "https://test.clerk.accounts.dev/.well-known/jwks.json",
-		ClerkAudience: "test-audience",
-		TMDBAPIKey:    "tmdb_test",
+		ClerkJWKSURL:   "https://test.clerk.accounts.dev/.well-known/jwks.json",
+		ClerkAudience:  "test-audience",
+		OMDBAPIKey:     "omdb_test",
 	}
 
 	err := cfg.Validate()
@@ -131,9 +131,9 @@ func TestValidate_MissingClerkAudience(t *testing.T) {
 	cfg := &Config{
 		DatabaseURL:    "postgres://test",
 		ClerkSecretKey: "sk_test",
-		ClerkJWKSURL:  "https://test.clerk.accounts.dev/.well-known/jwks.json",
-		ClerkIssuer:   "https://clerk.test.com",
-		TMDBAPIKey:    "tmdb_test",
+		ClerkJWKSURL:   "https://test.clerk.accounts.dev/.well-known/jwks.json",
+		ClerkIssuer:    "https://clerk.test.com",
+		OMDBAPIKey:     "omdb_test",
 	}
 
 	err := cfg.Validate()

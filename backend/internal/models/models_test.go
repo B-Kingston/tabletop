@@ -74,7 +74,7 @@ func TestMediaItem_AuditFields(t *testing.T) {
 	uid := uuid.MustParse("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
 	m := MediaItem{
 		InstanceID:  uid,
-		TMDBID:      123,
+		OMDBID:      "tt0000123",
 		Type:        "movie",
 		Title:       "Test Movie",
 		CreatedByID: uid,

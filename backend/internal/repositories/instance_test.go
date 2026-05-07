@@ -20,6 +20,7 @@ func setupRepoTestDB(t *testing.T) *gorm.DB {
 		&models.User{}, &models.Instance{}, &models.InstanceMembership{},
 		&models.MediaItem{}, &models.Wine{}, &models.Recipe{},
 		&models.Ingredient{}, &models.RecipeStep{}, &models.RecipeTag{},
+		&models.OMDBCache{},
 	)
 	require.NoError(t, err)
 

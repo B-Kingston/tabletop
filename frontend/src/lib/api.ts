@@ -7,6 +7,7 @@ declare module 'axios' {
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+const CLERK_JWT_TEMPLATE = import.meta.env.VITE_CLERK_JWT_TEMPLATE
 
 export const api = axios.create({
   baseURL: `${API_BASE_URL}/v1`,
@@ -15,18 +16,25 @@ export const api = axios.create({
   },
 })
 
-let authTokenGetter: (() => Promise<string | null>) | null = null
+type AuthTokenGetter = (options?: { template?: string }) => Promise<string | null>
 
-export function setAuthTokenGetter(getter: () => Promise<string | null>) {
+let authTokenGetter: AuthTokenGetter | null = null
+
+export function setAuthTokenGetter(getter: AuthTokenGetter) {
   authTokenGetter = getter
 }
 
+export async function getConfiguredAuthToken() {
+  if (!authTokenGetter) {
+    return null
+  }
+  return authTokenGetter(CLERK_JWT_TEMPLATE ? { template: CLERK_JWT_TEMPLATE } : undefined)
+}
+
 api.interceptors.request.use(async (config) => {
-  if (authTokenGetter) {
-    const token = await authTokenGetter()
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
+  const token = await getConfiguredAuthToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
   }
   return config
 })
@@ -47,7 +55,7 @@ api.interceptors.response.use(
     ) {
       originalRequest._retry = true
       try {
-        const freshToken = await authTokenGetter()
+        const freshToken = await getConfiguredAuthToken()
         const oldToken = originalRequest.headers.Authorization?.toString().replace('Bearer ', '') ?? ''
         if (freshToken && freshToken !== oldToken) {
           originalRequest.headers.Authorization = `Bearer ${freshToken}`

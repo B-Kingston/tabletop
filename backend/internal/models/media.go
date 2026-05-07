@@ -9,21 +9,20 @@ import (
 // MediaItem represents a movie or TV show tracked by an instance
 type MediaItem struct {
 	UUIDModel
-	InstanceID  uuid.UUID  `gorm:"type:uuid;not null;index" json:"instanceId"`
-	TMDBID      int        `gorm:"not null" json:"tmdbId"`
-	Type        string     `gorm:"not null" json:"type"` // movie, tv
-	Title       string     `gorm:"not null" json:"title"`
-	Overview    string     `json:"overview"`
-	PosterPath  string     `json:"posterPath"`
-	ReleaseDate     *time.Time `gorm:"type:date" json:"releaseDate"`
+	InstanceID      uuid.UUID  `gorm:"type:uuid;not null;index" json:"instanceId"`
+	OMDBID          string     `gorm:"column:omdb_id;size:32;not null" json:"omdbId"`
+	Type            string     `gorm:"not null" json:"type"` // movie, tv
+	Title           string     `gorm:"not null" json:"title"`
+	Overview        string     `json:"overview"`
+	ReleaseYear     string     `gorm:"size:16" json:"releaseYear"`
 	PlanToWatchDate *time.Time `gorm:"type:date" json:"planToWatchDate"`
 	Status          string     `gorm:"default:'planning'" json:"status"` // planning, watching, completed, dropped
 	Rating          *float32   `json:"rating"`                           // 0.0 - 5.0
-	Review      string     `json:"review"`
-	CreatedByID uuid.UUID  `gorm:"type:uuid;not null" json:"createdById"`
-	UpdatedByID uuid.UUID  `gorm:"type:uuid" json:"updatedById"`
-	CreatedAt   time.Time  `json:"createdAt"`
-	UpdatedAt   time.Time  `json:"updatedAt"`
+	Review          string     `json:"review"`
+	CreatedByID     uuid.UUID  `gorm:"type:uuid;not null" json:"createdById"`
+	UpdatedByID     uuid.UUID  `gorm:"type:uuid" json:"updatedById"`
+	CreatedAt       time.Time  `json:"createdAt"`
+	UpdatedAt       time.Time  `json:"updatedAt"`
 
 	// Associations
 	CreatedBy User `gorm:"foreignKey:CreatedByID" json:"createdBy,omitempty"`

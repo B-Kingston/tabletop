@@ -114,6 +114,10 @@ export default function NightDetailScreen() {
   }
 
   const creatorName = night.createdBy?.name ?? 'Unknown'
+  const mediaReleaseYear =
+    night.media && 'releaseYear' in night.media
+      ? (night.media.releaseYear as string | undefined)
+      : undefined
 
   return (
     <Screen title={night.name}>
@@ -222,8 +226,8 @@ export default function NightDetailScreen() {
                   ]}
                 >
                   {night.media.type}
-                  {night.media.releaseDate
-                    ? `  ·  ${night.media.releaseDate}`
+                  {mediaReleaseYear
+                    ? `  ·  ${mediaReleaseYear}`
                     : ''}
                 </Text>
               </View>

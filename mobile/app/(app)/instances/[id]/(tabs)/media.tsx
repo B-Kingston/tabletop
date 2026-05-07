@@ -18,13 +18,10 @@ import { EmptyState } from '@/components/EmptyState'
 import { Button } from '@/components/Button'
 import { useTheme } from '@/theme'
 import { useMedia } from '@/hooks/useMedia'
+import { useOMDBDetail } from '@/hooks/useOMDB'
 import { formatDate } from '@tabletop/shared'
 
-import type { MediaItem } from '@tabletop/shared'
-
-// ── Constants ─────────────────────────────────────────────────────────────
-
-const TMDB_POSTER_BASE = 'https://image.tmdb.org/t/p/w200'
+import type { MobileMediaItem } from '@/hooks/useMedia'
 
 const STATUS_FILTERS = ['All', 'Planning', 'Watching', 'Completed', 'Dropped'] as const
 
@@ -41,9 +38,39 @@ const STATUS_COLORS: Record<string, string> = {
   dropped: '#EF4444',
 }
 
-const FALLBACK_ICON: Record<string, string> = {
-  movie: '🎬',
-  tv: '📺',
+// ── Poster helper component ─────────────────────────────────────────────
+
+function MediaPoster({ omdbId, instanceId }: { omdbId: string; instanceId: string }) {
+  const { data: omdb } = useOMDBDetail(instanceId, omdbId)
+  const { colors } = useTheme()
+  const hasPoster = omdb?.poster && omdb.poster !== 'N/A'
+
+  if (hasPoster) {
+    return (
+      <Image
+        source={{ uri: omdb!.poster }}
+        style={[styles.poster, { borderRadius: 8 }]}
+        contentFit="cover"
+        transition={200}
+      />
+    )
+  }
+
+  return (
+    <View
+      style={[
+        styles.poster,
+        {
+          backgroundColor: colors.surfaceSecondary,
+          borderRadius: 8,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+      ]}
+    >
+      <Text style={{ fontSize: 28 }}>🎬</Text>
+    </View>
+  )
 }
 
 /**
@@ -78,7 +105,7 @@ export default function MediaScreen() {
   }, [router, instanceId])
 
   const handlePressMedia = useCallback(
-    (item: MediaItem) => {
+    (item: MobileMediaItem) => {
       router.push(`/(app)/instances/${instanceId}/media/${item.id}`)
     },
     [router, instanceId],
@@ -188,10 +215,7 @@ export default function MediaScreen() {
   // ── Media card ────────────────────────────────────────────────────────
 
   const renderMediaCard = useCallback(
-    ({ item }: { item: MediaItem }) => {
-      const posterUri = item.posterPath
-        ? `${TMDB_POSTER_BASE}${item.posterPath}`
-        : null
+    ({ item }: { item: MobileMediaItem }) => {
       const label = item.type === 'tv' ? 'TV' : 'Movie'
       const statusColor = STATUS_COLORS[item.status] ?? colors.textSecondary
 
@@ -214,30 +238,7 @@ export default function MediaScreen() {
           {/* Row: poster + info */}
           <View style={styles.cardRow}>
             {/* Poster */}
-            {posterUri ? (
-              <Image
-                source={{ uri: posterUri }}
-                style={[styles.poster, { borderRadius: 8 }]}
-                contentFit="cover"
-                transition={200}
-              />
-            ) : (
-              <View
-                style={[
-                  styles.poster,
-                  {
-                    backgroundColor: colors.surfaceSecondary,
-                    borderRadius: 8,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  },
-                ]}
-              >
-                <Text style={{ fontSize: 28 }}>
-                  {FALLBACK_ICON[item.type] ?? '🎬'}
-                </Text>
-              </View>
-            )}
+            <MediaPoster omdbId={item.omdbId} instanceId={instanceId} />
 
             {/* Info */}
             <View style={styles.cardInfo}>
@@ -305,14 +306,14 @@ export default function MediaScreen() {
                   Planned: {formatDate(item.planToWatchDate)}
                 </Text>
               ) : null}
-              {item.releaseDate ? (
+              {item.releaseYear ? (
                 <Text
                   style={[
                     typography.label,
                     { color: colors.textTertiary, marginTop: spacing.xs },
                   ]}
                 >
-                  Released: {formatDate(item.releaseDate)}
+                  Released: {item.releaseYear}
                 </Text>
               ) : null}
             </View>
@@ -320,7 +321,7 @@ export default function MediaScreen() {
         </TouchableOpacity>
       )
     },
-    [colors, spacing, typography, handlePressMedia],
+    [colors, spacing, typography, handlePressMedia, instanceId],
   )
 
   // ── Skeleton loader ───────────────────────────────────────────────────
