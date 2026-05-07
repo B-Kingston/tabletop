@@ -135,7 +135,7 @@ export function SpinTheNight() {
             <p className="text-sm text-text-secondary mb-4">
               Add some wines, recipes, or media items first.
             </p>
-            <div className="flex justify-center gap-3">
+            <div className="flex flex-wrap justify-center gap-3">
               <Button
                 variant="secondary"
                 onClick={() => navigate({ to: '/instances/$instanceId/wines/new', params: { instanceId } })}
@@ -158,7 +158,7 @@ export function SpinTheNight() {
           </div>
         ) : (
           <>
-            <div className="flex justify-center gap-3 mb-8">
+            <div className="flex flex-wrap justify-center gap-3 mb-8">
               {categories.map(({ key, label, icon: Icon }) => {
                 const isSelected = selected.has(key)
                 const hasItems =
@@ -251,7 +251,7 @@ export function SpinTheNight() {
                         placeholder="Give your night a name"
                       />
                     </div>
-                    <div className="flex gap-3 pt-2">
+                    <div className="flex flex-wrap gap-3 pt-2">
                       <Button onClick={handleSave} disabled={createNight.isPending}>
                         <Save className="mr-2 h-4 w-4" />
                         {createNight.isPending ? 'Saving...' : 'Save Night'}

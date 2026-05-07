@@ -138,7 +138,7 @@ function InstanceSection() {
           <p className="text-text-secondary max-w-sm mb-10 leading-relaxed">
             Create a space to start tracking media, wines, and recipes with the people you share them with.
           </p>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-center gap-3">
             <Button size="lg" onClick={() => setCreateOpen(true)}>
               <Plus className="h-5 w-5" />
               Create Space

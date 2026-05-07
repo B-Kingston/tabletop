@@ -1,5 +1,5 @@
 import { Link, useMatchRoute } from '@tanstack/react-router'
-import { Bot, Film, ChefHat, Wine, MessageSquare, Moon } from 'lucide-react'
+import { Film, ChefHat, Wine, MessageSquare, Moon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface InstanceNavProps {
@@ -12,7 +12,6 @@ const navItems = [
   { path: '/wines' as const, label: 'Wines', icon: Wine },
   { path: '/nights' as const, label: 'Nights', icon: Moon },
   { path: '/chat' as const, label: 'Messages', icon: MessageSquare },
-  { path: '/ai' as const, label: 'Assistant', icon: Bot },
 ]
 
 export function InstanceNav({ instanceId }: InstanceNavProps) {
@@ -38,10 +37,11 @@ export function InstanceNav({ instanceId }: InstanceNavProps) {
                 ? 'text-accent bg-accent-surface'
                 : 'text-muted hover:text-text hover:bg-surface-secondary/50'
             )}
+            aria-label={item.label}
             aria-current={isActive ? 'page' : undefined}
           >
             <item.icon className="h-4 w-4 flex-shrink-0" strokeWidth={1.5} />
-            <span className="hidden md:inline">{item.label}</span>
+            <span className="hidden lg:inline">{item.label}</span>
           </Link>
         )
       })}

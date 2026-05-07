@@ -30,7 +30,7 @@ export function RecipeList() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-y-2 mb-6">
           <h1 className="text-3xl font-semibold tracking-tight text-text">Recipes</h1>
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" onClick={() => setGeneratorOpen(true)}>

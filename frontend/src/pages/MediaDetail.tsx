@@ -129,7 +129,7 @@ export function MediaDetail() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-[300px_1fr]">
           {/* Poster */}
           <div className="space-y-4">
-            <div className="aspect-[2/3] w-full overflow-hidden rounded-3xl bg-surface-secondary">
+            <div className="aspect-[2/3] w-full max-w-[220px] mx-auto md:max-w-none overflow-hidden rounded-3xl bg-surface-secondary">
               {hasPoster ? (
                 <img
                   src={omdb!.poster}

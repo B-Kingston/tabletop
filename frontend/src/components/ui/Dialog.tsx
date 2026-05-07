@@ -48,7 +48,7 @@ export function Dialog({ open, onClose, children, className }: DialogProps) {
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.15 }}
             className={cn(
-              'relative z-50 w-full max-w-lg rounded-3xl bg-surface p-6 shadow-card',
+              'relative z-50 w-[calc(100%-2rem)] mx-auto max-w-lg rounded-3xl bg-surface p-6 shadow-card',
               className
             )}
             role="dialog"
@@ -56,12 +56,12 @@ export function Dialog({ open, onClose, children, className }: DialogProps) {
           >
             <button
               onClick={onClose}
-              className="absolute right-4 top-4 rounded-full p-1 text-muted hover:text-text-secondary focus:outline-none focus:ring-2 focus:ring-accent/30 focus:ring-offset-2"
+              className="absolute right-4 top-4 rounded-full p-2 text-muted hover:text-text-secondary focus:outline-none focus:ring-2 focus:ring-accent/30 focus:ring-offset-2"
               aria-label="Close"
             >
               <X className="h-4 w-4" />
             </button>
-            {children}
+            <div className="max-h-[80vh] overflow-y-auto">{children}</div>
           </motion.div>
         </div>
       )}

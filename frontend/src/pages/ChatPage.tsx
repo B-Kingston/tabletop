@@ -58,9 +58,9 @@ export function ChatPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
-        className="flex h-[calc(100vh-8rem)] gap-4"
+        className="flex flex-col md:flex-row h-[calc(100vh-6rem)] gap-4"
       >
-        <div className="w-64 flex-shrink-0 flex flex-col border-r border-border pr-4">
+        <div className="w-full md:w-64 flex-shrink-0 flex flex-col md:border-r border-border md:pr-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-text">AI Assistant Sessions</h2>
             <Button variant="ghost" size="sm" onClick={handleCreateSession}>
@@ -70,7 +70,7 @@ export function ChatPage() {
 
           {sessionsLoading && <ListSkeleton count={3} />}
 
-          <div className="flex-1 overflow-y-auto space-y-1">
+          <div className="flex-1 overflow-x-auto md:overflow-y-auto flex md:flex-col gap-1">
             {sessions?.map((session) => (
               <div
                 key={session.id}
@@ -81,7 +81,7 @@ export function ChatPage() {
                 }`}
                 onClick={() => setActiveSessionId(session.id)}
               >
-                <span className="truncate">{session.title || 'New AI Chat'}</span>
+                <span className="truncate whitespace-nowrap">{session.title || 'New AI Chat'}</span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation()

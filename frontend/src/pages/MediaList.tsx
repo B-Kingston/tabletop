@@ -60,7 +60,7 @@ export function MediaList() {
               </button>
             ))}
           </div>
-          <div className="segmented-control">
+          <div className="segmented-control overflow-x-auto">
             {typeTabs.map((tab) => (
               <button
                 key={tab.value}

@@ -63,12 +63,12 @@ export function WineList() {
         </div>
 
         <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="segmented-control">
+          <div className="segmented-control overflow-x-auto">
             {typeTabs.map((tab) => (
               <button
                 key={tab.value}
                 onClick={() => setTypeFilter(tab.value)}
-                className={`segmented-control-item${typeFilter === tab.value ? ' active' : ''}`}
+                className={`segmented-control-item whitespace-nowrap${typeFilter === tab.value ? ' active' : ''}`}
               >
                 {tab.label}
               </button>

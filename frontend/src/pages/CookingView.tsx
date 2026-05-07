@@ -106,7 +106,7 @@ export function CookingView() {
   return (
     <ErrorBoundary>
       <div className="fixed inset-0 z-50 bg-text text-surface flex flex-col">
-        <header className="flex items-center justify-between px-6 py-4 border-b border-border-subtle/10">
+        <header className="flex items-center justify-between px-6 py-4 border-b border-border-subtle/10 pt-[env(safe-area-inset-top)]">
           <h1 className="text-lg font-semibold truncate">{recipe.title}</h1>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted">
@@ -119,7 +119,7 @@ export function CookingView() {
                   params: { instanceId, recipeId },
                 })
               }
-              className="rounded-sm p-1 text-muted hover:text-surface transition-colors"
+              className="rounded-lg p-3 text-muted hover:text-surface transition-colors"
               aria-label="Exit cooking view"
             >
               <X className="h-6 w-6" />
@@ -161,15 +161,17 @@ export function CookingView() {
                             </Button>
                           ) : (
                             <>
-                              <span className="text-3xl font-mono font-bold text-surface">
+                              <span className="text-2xl sm:text-3xl font-mono font-bold text-surface">
                                 {formatTime(timerSeconds)}
                               </span>
-                              <Button variant="secondary" onClick={toggleTimer}>
-                                {timerRunning ? 'Pause' : 'Resume'}
-                              </Button>
-                              <Button variant="ghost" onClick={resetTimer} className="text-muted">
-                                Reset
-                              </Button>
+                              <div className="flex flex-wrap gap-2">
+                                <Button variant="secondary" onClick={toggleTimer}>
+                                  {timerRunning ? 'Pause' : 'Resume'}
+                                </Button>
+                                <Button variant="ghost" onClick={resetTimer} className="text-muted">
+                                  Reset
+                                </Button>
+                              </div>
                             </>
                           )}
                         </div>
@@ -182,7 +184,7 @@ export function CookingView() {
                       <h3 className="text-xl font-semibold mb-4 text-surface">Ingredients</h3>
                       <ul className="space-y-2">
                         {recipe.ingredients.map((ing) => (
-                          <li key={ing.id} className="flex items-center gap-3 text-lg text-surface/70">
+                          <li key={ing.id} className="flex items-center gap-3 text-lg text-surface/70 min-w-0 break-words">
                             <span className="text-muted">
                               {ing.quantity} {ing.unit}
                             </span>
@@ -206,7 +208,7 @@ export function CookingView() {
           </AnimatePresence>
         </div>
 
-        <footer className="flex items-center justify-between border-t border-border-subtle/30 px-6 py-4">
+        <footer className="flex items-center justify-between border-t border-border-subtle/30 px-6 py-4 pb-[env(safe-area-inset-bottom)]">
           <Button
             variant="ghost"
             size="lg"
@@ -218,11 +220,11 @@ export function CookingView() {
             Previous
           </Button>
 
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 overflow-x-auto max-w-[120px] sm:max-w-none px-2">
             {steps.map((_, i) => (
               <div
                 key={i}
-                className={`h-2 w-2 rounded-full transition-colors ${
+                className={`h-4 w-4 sm:h-3 sm:w-3 rounded-full shrink-0 transition-colors ${
                   i === currentStep ? 'bg-surface' : 'bg-muted/30'
                 }`}
               />

@@ -213,7 +213,7 @@ export function RecipeEdit() {
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label htmlFor="prepTime" className="block text-sm font-medium text-text-secondary mb-1">
                   Prep (min)
@@ -270,7 +270,7 @@ export function RecipeEdit() {
             </div>
             <div className="space-y-2">
               {ingredients.map((ing, i) => (
-                <div key={i} className="flex items-center gap-2">
+                <div key={i} className="flex flex-wrap sm:flex-nowrap items-center gap-2">
                   <input
                     value={ing.name}
                     onChange={(e) => updateIngredient(i, 'name', e.target.value)}
@@ -322,14 +322,20 @@ export function RecipeEdit() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-muted">Step {i + 1}</span>
                     <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min={0}
-                        value={step.durationMin ?? ''}
-                        onChange={(e) => updateStep(i, 'durationMin', e.target.value ? Number(e.target.value) : null)}
-                        placeholder="Min"
-                        className="w-20 rounded-2xl bg-surface-secondary border-0 py-1.5 px-2 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30"
-                      />
+                      <div className="flex items-center gap-2 rounded-2xl bg-bg px-2 py-1">
+                        <input
+                          type="number"
+                          min={0}
+                          value={step.durationMin ?? ''}
+                          onChange={(e) =>
+                            updateStep(i, 'durationMin', e.target.value ? Number(e.target.value) : null)
+                          }
+                          placeholder="0"
+                          aria-label={`Step ${i + 1} duration in minutes`}
+                          className="w-16 rounded-xl bg-transparent border-0 py-0.5 px-1 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30"
+                        />
+                        <span className="text-xs text-muted whitespace-nowrap">minutes</span>
+                      </div>
                       {steps.length > 1 && (
                         <button type="button" onClick={() => removeStep(i)} className="text-muted hover:text-red-600">
                           <X className="h-4 w-4" />
@@ -357,7 +363,7 @@ export function RecipeEdit() {
 
           <div>
             <h2 className="text-lg font-semibold text-text mb-3">Tags</h2>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
               <Input value={tagInput} onChange={(e) => setTagInput(e.target.value)} placeholder="Add a tag" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }} />
               <Button type="button" variant="secondary" size="sm" onClick={addTag}>
                 Add
