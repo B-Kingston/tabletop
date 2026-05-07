@@ -87,7 +87,7 @@ export function WineDetail() {
         </button>
 
         <div className="max-w-lg space-y-6">
-          <div className="flex items-start justify-between">
+          <div className="flex flex-wrap items-start justify-between gap-y-2">
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-text">{wine.name}</h1>
             </div>
