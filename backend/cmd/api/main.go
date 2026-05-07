@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -122,10 +121,7 @@ func main() {
 
 	r := gin.New()
 	r.Use(gin.Recovery())
-	allowOrigins := strings.Split(cfg.FrontendURL, ",")
-	for i := range allowOrigins {
-		allowOrigins[i] = strings.TrimSpace(allowOrigins[i])
-	}
+	allowOrigins := middleware.ParseAllowedOrigins(cfg.FrontendURL)
 	r.Use(middleware.CORS(&middleware.CORSConfig{
 		AllowOrigins: allowOrigins,
 	}))
@@ -188,7 +184,7 @@ func main() {
 	wsInstance := v1.Group("/instances/:instance_id")
 	wsInstance.Use(middleware.RequireAuth(wsAuthCfg))
 	wsInstance.Use(middleware.RequireInstanceMembership(db.DB))
-	wsInstance.GET("/ws", ws.ServeWS(hub, db.DB, cfg.FrontendURL))
+	wsInstance.GET("/ws", ws.ServeWS(hub, db.DB, allowOrigins))
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,

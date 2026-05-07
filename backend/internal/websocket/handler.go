@@ -10,7 +10,13 @@ import (
 	"tabletop/backend/internal/middleware"
 )
 
-func ServeWS(hub *Hub, db *gorm.DB, allowedOrigin string) gin.HandlerFunc {
+func CheckOrigin(allowedOrigins []string) func(*http.Request) bool {
+	return func(r *http.Request) bool {
+		return middleware.IsOriginAllowed(r.Header.Get("Origin"), allowedOrigins)
+	}
+}
+
+func ServeWS(hub *Hub, db *gorm.DB, allowedOrigins []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		instanceID, ok := middleware.GetInstanceID(c)
 		if !ok {
@@ -23,13 +29,7 @@ func ServeWS(hub *Hub, db *gorm.DB, allowedOrigin string) gin.HandlerFunc {
 			return
 		}
 
-		upgrader.CheckOrigin = func(r *http.Request) bool {
-			if allowedOrigin == "" || allowedOrigin == "*" {
-				return true
-			}
-			origin := r.Header.Get("Origin")
-			return origin == allowedOrigin
-		}
+		upgrader.CheckOrigin = CheckOrigin(allowedOrigins)
 		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
 			slog.Error("websocket upgrade failed", "error", err)
