@@ -121,19 +121,42 @@ cmd_migrate() {
   go run github.com/pressly/goose/v3/cmd/goose@latest -dir=migrations postgres "$db_url" up
 }
 
-cmd_migrate_status() {
-  echo -e "${BLUE}🗄️  Migration status ...${NC}"
+resolve_database_url() {
   local db_url="${DATABASE_URL:-}"
   if [ -z "$db_url" ]; then
-    echo -e "${YELLOW}   DATABASE_URL not set locally, fetching from Fly.io ...${NC}"
+    echo -e "${YELLOW}   DATABASE_URL not set locally, fetching from Fly.io ...${NC}" >&2
     db_url=$(fly secrets list -a "$APP_NAME" --json 2>/dev/null | grep -o '"DATABASE_URL":"[^"]*"' | cut -d'"' -f4)
   fi
+
   if [ -z "$db_url" ]; then
-    echo -e "${RED}❌  DATABASE_URL not found. Set it locally or on Fly.io.${NC}"
-    exit 1
+    echo -e "${RED}❌  DATABASE_URL not found. Set it locally or on Fly.io.${NC}" >&2
+    return 1
   fi
-  cd "$SCRIPT_DIR/backend"
-  go run github.com/pressly/goose/v3/cmd/goose@latest -dir=migrations postgres "$db_url" status
+
+  printf "%s" "$db_url"
+}
+
+print_migration_status_readout() {
+  local label="$1"
+  local db_url="$2"
+
+  echo -e "${BLUE}🗄️  Migration readout ($label)${NC}"
+  local status_output
+  status_output=$(cd "$SCRIPT_DIR/backend" && go run github.com/pressly/goose/v3/cmd/goose@latest -dir=migrations postgres "$db_url" status)
+  echo "$status_output"
+
+  local pending_count applied_count
+  pending_count=$(printf "%s\n" "$status_output" | awk '$1 == "Pending" {count++} END {print count + 0}')
+  applied_count=$(printf "%s\n" "$status_output" | awk '$1 != "Pending" && $1 != "Applied" && $1 != "" {count++} END {print count + 0}')
+  echo -e "${BLUE}   Applied: ${applied_count} | Pending: ${pending_count}${NC}"
+  echo ""
+}
+
+cmd_migrate_status() {
+  echo -e "${BLUE}🗄️  Migration status ...${NC}"
+  local db_url
+  db_url=$(resolve_database_url) || exit 1
+  print_migration_status_readout "current database" "$db_url"
 }
 
 cmd_deploy() {
@@ -196,6 +219,10 @@ cmd_deploy() {
   echo -e "${GREEN}✅  All required secrets are set${NC}"
   echo ""
 
+  local db_url
+  db_url=$(resolve_database_url) || exit 1
+  print_migration_status_readout "before deploy" "$db_url"
+
   # Deploy
   echo -e "${YELLOW}🚀  Deploying to Fly.io ...${NC}"
   echo ""
@@ -204,6 +231,7 @@ cmd_deploy() {
   fly deploy -a "$APP_NAME"
 
   echo ""
+  print_migration_status_readout "after deploy" "$db_url"
   echo -e "${GREEN}✅  Deployment complete!${NC}"
   echo -e "${GREEN}    Backend: https://${APP_NAME}.fly.dev${NC}"
   echo -e "${GREEN}    Monitor: fly status -a $APP_NAME${NC}"
