@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -121,8 +122,12 @@ func main() {
 
 	r := gin.New()
 	r.Use(gin.Recovery())
+	allowOrigins := strings.Split(cfg.FrontendURL, ",")
+	for i := range allowOrigins {
+		allowOrigins[i] = strings.TrimSpace(allowOrigins[i])
+	}
 	r.Use(middleware.CORS(&middleware.CORSConfig{
-		AllowOrigins: []string{cfg.FrontendURL},
+		AllowOrigins: allowOrigins,
 	}))
 
 	r.GET("/health", func(c *gin.Context) {

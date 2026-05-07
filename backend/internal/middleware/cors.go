@@ -14,14 +14,23 @@ func CORS(cfg *CORSConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
 		allowed := false
+		wildcard := false
 		for _, o := range cfg.AllowOrigins {
-			if o == origin || o == "*" {
+			if o == "*" {
+				wildcard = true
+				break
+			}
+			if o == origin {
 				allowed = true
 				break
 			}
 		}
 
-		if allowed {
+		if wildcard {
+			// Mirror the request origin so credentials work (browser
+			// rejects Access-Control-Allow-Origin: * when credentials=true)
+			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+		} else if allowed {
 			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
 		}
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
