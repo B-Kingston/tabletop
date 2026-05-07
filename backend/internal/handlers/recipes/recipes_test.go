@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"tabletop/backend/internal/middleware"
 	"tabletop/backend/internal/models"
 	"tabletop/backend/internal/repositories"
 	"tabletop/backend/internal/services"
@@ -38,7 +39,7 @@ func setupRecipeHandlerTest(t *testing.T) (*gin.Engine, *Handler, uuid.UUID, uui
 	require.NoError(t, db.Create(&membership).Error)
 
 	recipeRepo := repositories.NewRecipeRepository(db)
-	recipeSvc := services.NewRecipeService(recipeRepo)
+	recipeSvc := services.NewRecipeService(recipeRepo, nil)
 	handler := NewHandler(recipeSvc, db)
 
 	r := gin.New()
@@ -215,4 +216,25 @@ func TestHandler_Delete(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestHandler_RegisterRoutesGenerate(t *testing.T) {
+	r, handler, instanceID, _ := setupRecipeHandlerTest(t)
+
+	// Register the same route shape used by cmd/api. Auth is handled by the
+	// app-level group in production; membership is applied by RegisterRoutes.
+	r.Use(func(c *gin.Context) {
+		c.Set(middleware.UserContextKey, middleware.UserContext{ClerkID: "recipe_handler_user", Email: "test@test.com"})
+		c.Next()
+	})
+	instance := r.Group("/instances/:instance_id")
+	handler.RegisterRoutes(instance)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/instances/"+instanceID.String()+"/recipes/generate", bytes.NewReader([]byte(`{"prompt":"weeknight pasta"}`)))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+
+	assert.NotEqual(t, http.StatusNotFound, w.Code)
+	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
 }

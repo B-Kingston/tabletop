@@ -1,10 +1,10 @@
-import { Outlet, useParams } from '@tanstack/react-router'
+import { Outlet, useParams, Link } from '@tanstack/react-router'
 import { UserButton } from '@/lib/clerk'
 import { useEffect } from 'react'
 import { useInstance } from '@/hooks/useInstances'
 import { useInstanceStore } from '@/stores/instanceStore'
 import { InstanceNav } from './InstanceNav'
-import { cn } from '@/lib/utils'
+import { Home } from 'lucide-react'
 
 export function InstanceLayout() {
   const { instanceId } = useParams({ strict: false }) as { instanceId: string }
@@ -17,32 +17,33 @@ export function InstanceLayout() {
   }, [instanceId, setCurrentInstance])
 
   return (
-    <div className="flex h-screen flex-col bg-neutral-50">
-      {/* Top navigation bar */}
-      <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4 min-w-0">
-            <h1 className="text-base font-semibold text-neutral-900 truncate">
-              {isLoading ? '...' : instance?.name ?? 'Group'}
-            </h1>
-            <div className="hidden sm:block h-6 w-px bg-neutral-200" />
-            <div className="hidden sm:block">
-              <InstanceNav instanceId={instanceId} />
-            </div>
+    <div className="min-h-screen bg-bg">
+      {/* Floating pill navigation */}
+      <header className="fixed top-4 left-1/2 -translate-x-1/2 z-50">
+        <div className="flex items-center gap-2 rounded-full bg-surface/80 backdrop-blur-xl border border-border/50 shadow-nav px-2 py-1.5">
+          <Link
+            to="/"
+            className="flex items-center justify-center h-9 w-9 rounded-full text-muted hover:text-text hover:bg-surface-secondary/50 transition-all duration-150"
+          >
+            <Home className="h-4 w-4" strokeWidth={1.5} />
+          </Link>
+          <div className="h-5 w-px bg-border/60" />
+          <div className="flex items-center gap-3 pr-2">
+            <span className="text-sm font-semibold text-text hidden sm:block max-w-[140px] truncate">
+              {isLoading ? '...' : instance?.name ?? 'Home'}
+            </span>
+            <InstanceNav instanceId={instanceId} />
           </div>
-          <div className="flex-shrink-0">
+          <div className="h-5 w-px bg-border/60" />
+          <div className="pl-1">
             <UserButton afterSignOutUrl="/" />
           </div>
         </div>
-        {/* Mobile nav: scrollable pill row */}
-        <div className="sm:hidden border-t border-neutral-100 px-4 py-2 overflow-x-auto">
-          <InstanceNav instanceId={instanceId} />
-        </div>
       </header>
 
-      {/* Main content */}
-      <main className={cn('flex-1 overflow-auto')}>
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      {/* Main content with generous top padding for floating nav */}
+      <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl">
           <Outlet />
         </div>
       </main>

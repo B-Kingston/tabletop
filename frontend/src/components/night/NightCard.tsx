@@ -37,9 +37,9 @@ export function NightCard({ night, instanceId }: NightCardProps) {
           params: { instanceId, nightId: night.id },
         })
       }
-      className="group text-left w-full rounded-xl bg-white p-5 shadow-sm ring-1 ring-neutral-200 hover:shadow-md transition-shadow"
+      className="group text-left w-full rounded-3xl bg-surface p-5 border border-border hover:shadow-card transition-shadow"
     >
-      <h3 className="font-medium text-neutral-900 truncate mb-3">{night.name}</h3>
+      <h3 className="font-medium text-text truncate mb-3">{night.name}</h3>
 
       <div className="flex flex-wrap gap-2">
         {items.map((item) => {
@@ -56,10 +56,10 @@ export function NightCard({ night, instanceId }: NightCardProps) {
               key={item.key}
               className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
                 hasItem
-                  ? 'bg-neutral-100 text-neutral-700'
+                  ? 'bg-surface-secondary text-text-secondary'
                   : wasDeleted
                   ? 'bg-red-50 text-red-600'
-                  : 'bg-neutral-50 text-neutral-400'
+                  : 'bg-surface-secondary/50 text-muted'
               }`}
             >
               {wasDeleted ? (
@@ -84,9 +84,9 @@ export function NightCard({ night, instanceId }: NightCardProps) {
               className="h-5 w-5 rounded-full object-cover"
             />
           ) : (
-            <div className="h-5 w-5 rounded-full bg-neutral-200" />
+            <div className="h-5 w-5 rounded-full bg-border" />
           )}
-          <span className="text-xs text-neutral-500">{night.createdBy.name}</span>
+          <span className="text-xs text-muted">{night.createdBy.name}</span>
         </div>
       )}
     </motion.button>

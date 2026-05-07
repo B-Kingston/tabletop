@@ -21,10 +21,10 @@ export function RecipeCard({ recipe, instanceId }: RecipeCardProps) {
           params: { instanceId, recipeId: recipe.id },
         })
       }
-      className="group text-left w-full rounded-xl bg-white shadow-sm ring-1 ring-neutral-200 overflow-hidden hover:shadow-md transition-shadow"
+      className="group text-left w-full rounded-3xl bg-surface border border-border overflow-hidden hover:shadow-card transition-shadow"
     >
       {recipe.imageUrl && (
-        <div className="aspect-video w-full bg-neutral-100 overflow-hidden">
+        <div className="aspect-video w-full bg-surface-secondary overflow-hidden">
           <img
             src={recipe.imageUrl}
             alt={recipe.title}
@@ -34,11 +34,11 @@ export function RecipeCard({ recipe, instanceId }: RecipeCardProps) {
         </div>
       )}
       <div className="p-4">
-        <h3 className="font-medium text-neutral-900 truncate">{recipe.title}</h3>
+        <h3 className="font-medium text-text truncate">{recipe.title}</h3>
         {recipe.description && (
-          <p className="mt-1 text-sm text-neutral-500 line-clamp-2">{recipe.description}</p>
+          <p className="mt-1 text-sm text-text-secondary line-clamp-2">{recipe.description}</p>
         )}
-        <div className="mt-3 flex items-center gap-4 text-xs text-neutral-500">
+        <div className="mt-3 flex items-center gap-4 text-xs text-muted">
           {(recipe.prepTime > 0 || recipe.cookTime > 0) && (
             <span className="flex items-center gap-1">
               <Clock className="h-3.5 w-3.5" />
@@ -57,7 +57,7 @@ export function RecipeCard({ recipe, instanceId }: RecipeCardProps) {
             {recipe.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag.id}
-                className="inline-flex rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600"
+                className="inline-flex rounded-full bg-surface-secondary px-2 py-0.5 text-xs text-text-secondary"
               >
                 {tag.name}
               </span>

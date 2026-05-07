@@ -23,6 +23,14 @@ var ErrRateLimiterUnavailable = errors.New("rate limiter unavailable")
 // OpenAI request limit.
 var ErrDailyLimitExceeded = errors.New("daily rate limit exceeded")
 
+// ErrOpenAIUpstream is returned when the OpenAI API returns a non-OK status,
+// times out, or produces an unreadable response.
+var ErrOpenAIUpstream = errors.New("openai upstream error")
+
+// ErrGeneratedRecipeInvalid is returned when OpenAI returns content that
+// cannot be parsed or validated against the expected recipe schema.
+var ErrGeneratedRecipeInvalid = errors.New("generated recipe invalid")
+
 type RateLimiter interface {
 	Incr(ctx context.Context, key string) *redis.IntCmd
 	Expire(ctx context.Context, key string, expiration time.Duration) *redis.BoolCmd
@@ -45,10 +53,11 @@ type OpenAIMessage struct {
 }
 
 type OpenAIRequest struct {
-	Model       string          `json:"model"`
-	Messages    []OpenAIMessage `json:"messages"`
-	Temperature float64         `json:"temperature"`
-	Stream      bool            `json:"stream"`
+	Model          string          `json:"model"`
+	Messages       []OpenAIMessage `json:"messages"`
+	Temperature    float64         `json:"temperature"`
+	Stream         bool            `json:"stream"`
+	ResponseFormat any             `json:"response_format,omitempty"`
 }
 
 type OpenAIResponse struct {
@@ -77,8 +86,31 @@ type OpenAIStreamChunk struct {
 	} `json:"choices"`
 }
 
-const RecipeSystemPrompt = `You are a helpful recipe assistant. When asked to create or suggest a recipe, 
-respond with valid JSON matching this schema:
+// GeneratedRecipe is a structured recipe produced by the AI.
+type GeneratedRecipe struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	PrepTime    int    `json:"prepTime"`
+	CookTime    int    `json:"cookTime"`
+	Servings    int    `json:"servings"`
+	Ingredients []struct {
+		Name     string `json:"name"`
+		Quantity string `json:"quantity"`
+		Unit     string `json:"unit"`
+		Optional bool   `json:"optional"`
+	} `json:"ingredients"`
+	Steps []struct {
+		OrderIndex  int    `json:"orderIndex"`
+		Title       string `json:"title"`
+		Content     string `json:"content"`
+		DurationMin *int   `json:"durationMin"`
+	} `json:"steps"`
+	Tags []string `json:"tags"`
+}
+
+const RecipeSystemPrompt = `You are a helpful recipe assistant. When asked to create or suggest a recipe, respond with ONLY valid JSON and nothing else. No markdown formatting, no code fences, no explanation outside the JSON object.
+
+Output a single JSON object matching this schema exactly:
 {
   "title": "string",
   "description": "string",
@@ -86,17 +118,18 @@ respond with valid JSON matching this schema:
   "cookTime": number (minutes),
   "servings": number,
   "ingredients": [{"name": "string", "quantity": "string", "unit": "string", "optional": false}],
-  "steps": [{"orderIndex": number, "title": "string (optional)", "content": "string (markdown)", "durationMin": number or null}]
+  "steps": [{"orderIndex": number, "title": "string (optional)", "content": "string (markdown)", "durationMin": number or null}],
+  "tags": ["string"]
 }
 
-Always include prepTime, cookTime, and at least 2 steps. Use clear, concise markdown for step content.`
+Always include prepTime, cookTime, at least 2 steps, and 1-4 tags. Use clear, concise markdown for step content.`
 
 func NewOpenAIService(apiKey string, rateLimiter RateLimiter, dailyLimit int, production bool) *OpenAIService {
 	return &OpenAIService{
 		apiKey:      apiKey,
 		baseURL:     "https://api.openai.com/v1",
 		httpClient:  &http.Client{Timeout: 60 * time.Second},
-		model:       "gpt-4o-mini",
+		model:       "gpt-5.4-mini-2026-03-17",
 		rateLimiter: rateLimiter,
 		dailyLimit:  dailyLimit,
 		production:  production,
@@ -168,6 +201,101 @@ func (s *OpenAIService) ChatCompletion(ctx context.Context, messages []OpenAIMes
 	}
 
 	return &result, nil
+}
+
+func (s *OpenAIService) GenerateRecipe(ctx context.Context, prompt string) (*GeneratedRecipe, error) {
+	messages := []OpenAIMessage{
+		{Role: "system", Content: RecipeSystemPrompt},
+		{Role: "user", Content: prompt},
+	}
+
+	reqBody := OpenAIRequest{
+		Model:          s.model,
+		Messages:       messages,
+		Temperature:    0.7,
+		Stream:         false,
+		ResponseFormat: map[string]string{"type": "json_object"},
+	}
+
+	body, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to marshal request: %w", ErrOpenAIUpstream, err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.baseURL+"/chat/completions", strings.NewReader(string(body)))
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to create request: %w", ErrOpenAIUpstream, err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+s.apiKey)
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("%w: failed to call OpenAI: %w", ErrOpenAIUpstream, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("%w: OpenAI returned %d: %s", ErrOpenAIUpstream, resp.StatusCode, string(respBody))
+	}
+
+	var result OpenAIResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("%w: failed to decode response: %w", ErrOpenAIUpstream, err)
+	}
+
+	if len(result.Choices) == 0 {
+		return nil, fmt.Errorf("%w: openai returned no choices", ErrOpenAIUpstream)
+	}
+
+	raw := strings.TrimSpace(result.Choices[0].Message.Content)
+	if raw == "" {
+		return nil, fmt.Errorf("%w: openai returned empty content", ErrOpenAIUpstream)
+	}
+
+	// Strip markdown code fences if present (e.g. ```json ... ```)
+	raw = stripMarkdownFences(raw)
+
+	var recipe GeneratedRecipe
+	if err := json.Unmarshal([]byte(raw), &recipe); err != nil {
+		return nil, fmt.Errorf("%w: failed to parse generated recipe: %w", ErrGeneratedRecipeInvalid, err)
+	}
+
+	// Validate required fields
+	if recipe.Title == "" {
+		return nil, fmt.Errorf("%w: generated recipe is missing title", ErrGeneratedRecipeInvalid)
+	}
+	if len(recipe.Steps) < 2 {
+		return nil, fmt.Errorf("%w: generated recipe must have at least 2 steps, got %d", ErrGeneratedRecipeInvalid, len(recipe.Steps))
+	}
+	if recipe.PrepTime < 0 {
+		return nil, fmt.Errorf("%w: generated recipe prepTime must be non-negative, got %d", ErrGeneratedRecipeInvalid, recipe.PrepTime)
+	}
+	if recipe.CookTime < 0 {
+		return nil, fmt.Errorf("%w: generated recipe cookTime must be non-negative, got %d", ErrGeneratedRecipeInvalid, recipe.CookTime)
+	}
+
+	return &recipe, nil
+}
+
+// stripMarkdownFences removes leading and trailing triple-backtick fences
+// that some models wrap JSON in despite instructions not to.
+func stripMarkdownFences(s string) string {
+	s = strings.TrimSpace(s)
+	// Strip ```json or ``` prefix
+	if strings.HasPrefix(s, "```") {
+		s = s[3:]
+		// Remove optional language identifier (e.g. "json")
+		if idx := strings.Index(s, "\n"); idx != -1 {
+			s = s[idx+1:]
+		}
+	}
+	// Strip trailing ```
+	if strings.HasSuffix(s, "```") {
+		s = s[:len(s)-3]
+	}
+	return strings.TrimSpace(s)
 }
 
 func (s *OpenAIService) ChatCompletionStream(ctx context.Context, messages []OpenAIMessage) (<-chan OpenAIStreamChunk, context.CancelFunc, error) {

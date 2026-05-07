@@ -20,7 +20,7 @@ func TestOpenAIService_ChatCompletion(t *testing.T) {
 
 		var req OpenAIRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
-		assert.Equal(t, "gpt-4o-mini", req.Model)
+		assert.Equal(t, "gpt-5.4-mini-2026-03-17", req.Model)
 		assert.False(t, req.Stream)
 
 		resp := OpenAIResponse{

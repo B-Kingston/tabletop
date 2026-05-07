@@ -33,7 +33,7 @@ func setupRecipeServiceTest(t *testing.T) (uuid.UUID, uuid.UUID) {
 func TestRecipeService_Create(t *testing.T) {
 	db := setupServiceTestDB(t)
 	repo := repositories.NewRecipeRepository(db)
-	svc := NewRecipeService(repo)
+	svc := NewRecipeService(repo, nil)
 	ctx := context.Background()
 
 	instanceID, userID := setupRecipeServiceTest(t)
@@ -62,7 +62,7 @@ func TestRecipeService_Create(t *testing.T) {
 func TestRecipeService_Create_NoIngredientsOrSteps(t *testing.T) {
 	db := setupServiceTestDB(t)
 	repo := repositories.NewRecipeRepository(db)
-	svc := NewRecipeService(repo)
+	svc := NewRecipeService(repo, nil)
 	ctx := context.Background()
 
 	instanceID, userID := setupRecipeServiceTest(t)
@@ -81,7 +81,7 @@ func TestRecipeService_Create_NoIngredientsOrSteps(t *testing.T) {
 func TestRecipeService_GetByID(t *testing.T) {
 	db := setupServiceTestDB(t)
 	repo := repositories.NewRecipeRepository(db)
-	svc := NewRecipeService(repo)
+	svc := NewRecipeService(repo, nil)
 	ctx := context.Background()
 
 	instanceID, userID := setupRecipeServiceTest(t)
@@ -105,7 +105,7 @@ func TestRecipeService_GetByID(t *testing.T) {
 func TestRecipeService_GetByID_NotFound(t *testing.T) {
 	db := setupServiceTestDB(t)
 	repo := repositories.NewRecipeRepository(db)
-	svc := NewRecipeService(repo)
+	svc := NewRecipeService(repo, nil)
 
 	_, _ = setupRecipeServiceTest(t)
 
@@ -117,7 +117,7 @@ func TestRecipeService_GetByID_NotFound(t *testing.T) {
 func TestRecipeService_List(t *testing.T) {
 	db := setupServiceTestDB(t)
 	repo := repositories.NewRecipeRepository(db)
-	svc := NewRecipeService(repo)
+	svc := NewRecipeService(repo, nil)
 	ctx := context.Background()
 
 	instanceID, userID := setupRecipeServiceTest(t)
@@ -135,7 +135,7 @@ func TestRecipeService_List(t *testing.T) {
 func TestRecipeService_Update(t *testing.T) {
 	db := setupServiceTestDB(t)
 	repo := repositories.NewRecipeRepository(db)
-	svc := NewRecipeService(repo)
+	svc := NewRecipeService(repo, nil)
 	ctx := context.Background()
 
 	instanceID, userID := setupRecipeServiceTest(t)
@@ -167,7 +167,7 @@ func TestRecipeService_Update(t *testing.T) {
 func TestRecipeService_Update_NotFound(t *testing.T) {
 	db := setupServiceTestDB(t)
 	repo := repositories.NewRecipeRepository(db)
-	svc := NewRecipeService(repo)
+	svc := NewRecipeService(repo, nil)
 
 	_, _ = setupRecipeServiceTest(t)
 
@@ -180,7 +180,7 @@ func TestRecipeService_Update_NotFound(t *testing.T) {
 func TestRecipeService_Delete(t *testing.T) {
 	db := setupServiceTestDB(t)
 	repo := repositories.NewRecipeRepository(db)
-	svc := NewRecipeService(repo)
+	svc := NewRecipeService(repo, nil)
 	ctx := context.Background()
 
 	instanceID, userID := setupRecipeServiceTest(t)

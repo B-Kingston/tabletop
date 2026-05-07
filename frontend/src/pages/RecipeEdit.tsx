@@ -181,27 +181,27 @@ export function RecipeEdit() {
                 : { to: '/instances/$instanceId/recipes/$recipeId', params: { instanceId, recipeId: recipeId! } }
             )
           }
-          className="mb-6 flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+          className="mb-6 flex items-center gap-2 text-sm text-text-secondary hover:text-accent transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           {isNew ? 'Back to Recipes' : 'Back to Recipe'}
         </button>
 
-        <h1 className="text-2xl font-bold tracking-tight text-neutral-900 mb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-text mb-6">
           {isNew ? 'New Recipe' : 'Edit Recipe'}
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-8 max-w-2xl">
           <div className="space-y-4">
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-neutral-700 mb-1">
+              <label htmlFor="title" className="block text-sm font-medium text-text-secondary mb-1">
                 Title
               </label>
               <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} required />
             </div>
 
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-neutral-700 mb-1">
+              <label htmlFor="description" className="block text-sm font-medium text-text-secondary mb-1">
                 Description
               </label>
               <textarea
@@ -209,13 +209,13 @@ export function RecipeEdit() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                className="block w-full rounded-lg border-0 py-2.5 px-3 text-neutral-900 shadow-sm ring-1 ring-inset ring-neutral-200 placeholder:text-neutral-400 focus:ring-2 focus:ring-inset focus:ring-neutral-900 sm:text-sm resize-none"
+                className="block w-full rounded-2xl bg-surface-secondary border-0 py-2.5 px-4 text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm resize-none"
               />
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label htmlFor="prepTime" className="block text-sm font-medium text-neutral-700 mb-1">
+                <label htmlFor="prepTime" className="block text-sm font-medium text-text-secondary mb-1">
                   Prep (min)
                 </label>
                 <Input
@@ -227,7 +227,7 @@ export function RecipeEdit() {
                 />
               </div>
               <div>
-                <label htmlFor="cookTime" className="block text-sm font-medium text-neutral-700 mb-1">
+                <label htmlFor="cookTime" className="block text-sm font-medium text-text-secondary mb-1">
                   Cook (min)
                 </label>
                 <Input
@@ -239,7 +239,7 @@ export function RecipeEdit() {
                 />
               </div>
               <div>
-                <label htmlFor="servings" className="block text-sm font-medium text-neutral-700 mb-1">
+                <label htmlFor="servings" className="block text-sm font-medium text-text-secondary mb-1">
                   Servings
                 </label>
                 <Input
@@ -253,7 +253,7 @@ export function RecipeEdit() {
             </div>
 
             <div>
-              <label htmlFor="imageUrl" className="block text-sm font-medium text-neutral-700 mb-1">
+              <label htmlFor="imageUrl" className="block text-sm font-medium text-text-secondary mb-1">
                 Image URL
               </label>
               <Input id="imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." />
@@ -262,7 +262,7 @@ export function RecipeEdit() {
 
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-neutral-900">Ingredients</h2>
+              <h2 className="text-lg font-semibold text-text">Ingredients</h2>
               <Button type="button" variant="ghost" size="sm" onClick={addIngredient}>
                 <Plus className="mr-1 h-4 w-4" />
                 Add
@@ -275,31 +275,31 @@ export function RecipeEdit() {
                     value={ing.name}
                     onChange={(e) => updateIngredient(i, 'name', e.target.value)}
                     placeholder="Ingredient"
-                    className="flex-1 rounded-lg border-0 py-2 px-3 text-sm text-neutral-900 shadow-sm ring-1 ring-inset ring-neutral-200 placeholder:text-neutral-400 focus:ring-2 focus:ring-inset focus:ring-neutral-900"
+                    className="flex-1 rounded-2xl bg-surface-secondary border-0 py-2 px-3 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30"
                   />
                   <input
                     value={ing.quantity}
                     onChange={(e) => updateIngredient(i, 'quantity', e.target.value)}
                     placeholder="Qty"
-                    className="w-20 rounded-lg border-0 py-2 px-3 text-sm text-neutral-900 shadow-sm ring-1 ring-inset ring-neutral-200 placeholder:text-neutral-400 focus:ring-2 focus:ring-inset focus:ring-neutral-900"
+                    className="w-20 rounded-2xl bg-surface-secondary border-0 py-2 px-3 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30"
                   />
                   <input
                     value={ing.unit}
                     onChange={(e) => updateIngredient(i, 'unit', e.target.value)}
                     placeholder="Unit"
-                    className="w-20 rounded-lg border-0 py-2 px-3 text-sm text-neutral-900 shadow-sm ring-1 ring-inset ring-neutral-200 placeholder:text-neutral-400 focus:ring-2 focus:ring-inset focus:ring-neutral-900"
+                    className="w-20 rounded-2xl bg-surface-secondary border-0 py-2 px-3 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30"
                   />
-                  <label className="flex items-center gap-1 text-xs text-neutral-500 whitespace-nowrap">
+                  <label className="flex items-center gap-1 text-xs text-muted whitespace-nowrap">
                     <input
                       type="checkbox"
                       checked={ing.optional}
                       onChange={(e) => updateIngredient(i, 'optional', e.target.checked)}
-                      className="rounded border-neutral-300"
+                      className="rounded border-border"
                     />
                     Opt.
                   </label>
                   {ingredients.length > 1 && (
-                    <button type="button" onClick={() => removeIngredient(i)} className="text-neutral-400 hover:text-red-500">
+                    <button type="button" onClick={() => removeIngredient(i)} className="text-muted hover:text-red-600">
                       <X className="h-4 w-4" />
                     </button>
                   )}
@@ -310,7 +310,7 @@ export function RecipeEdit() {
 
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-neutral-900">Steps</h2>
+              <h2 className="text-lg font-semibold text-text">Steps</h2>
               <Button type="button" variant="ghost" size="sm" onClick={addStep}>
                 <Plus className="mr-1 h-4 w-4" />
                 Add
@@ -318,9 +318,9 @@ export function RecipeEdit() {
             </div>
             <div className="space-y-4">
               {steps.map((step, i) => (
-                <div key={i} className="rounded-lg bg-neutral-50 p-4">
+                <div key={i} className="bg-surface-secondary rounded-2xl p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-neutral-500">Step {i + 1}</span>
+                    <span className="text-sm font-medium text-muted">Step {i + 1}</span>
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
@@ -328,10 +328,10 @@ export function RecipeEdit() {
                         value={step.durationMin ?? ''}
                         onChange={(e) => updateStep(i, 'durationMin', e.target.value ? Number(e.target.value) : null)}
                         placeholder="Min"
-                        className="w-20 rounded-lg border-0 py-1.5 px-2 text-sm text-neutral-900 shadow-sm ring-1 ring-inset ring-neutral-200 placeholder:text-neutral-400 focus:ring-2 focus:ring-inset focus:ring-neutral-900"
+                        className="w-20 rounded-2xl bg-surface-secondary border-0 py-1.5 px-2 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30"
                       />
                       {steps.length > 1 && (
-                        <button type="button" onClick={() => removeStep(i)} className="text-neutral-400 hover:text-red-500">
+                        <button type="button" onClick={() => removeStep(i)} className="text-muted hover:text-red-600">
                           <X className="h-4 w-4" />
                         </button>
                       )}
@@ -341,14 +341,14 @@ export function RecipeEdit() {
                     value={step.title}
                     onChange={(e) => updateStep(i, 'title', e.target.value)}
                     placeholder="Step title (optional)"
-                    className="mb-2 w-full rounded-lg border-0 py-1.5 px-3 text-sm text-neutral-900 shadow-sm ring-1 ring-inset ring-neutral-200 placeholder:text-neutral-400 focus:ring-2 focus:ring-inset focus:ring-neutral-900"
+                    className="mb-2 w-full rounded-2xl bg-surface-secondary border-0 py-1.5 px-3 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30"
                   />
                   <textarea
                     value={step.content}
                     onChange={(e) => updateStep(i, 'content', e.target.value)}
                     placeholder="Step instructions..."
                     rows={2}
-                    className="w-full rounded-lg border-0 py-1.5 px-3 text-sm text-neutral-900 shadow-sm ring-1 ring-inset ring-neutral-200 placeholder:text-neutral-400 focus:ring-2 focus:ring-inset focus:ring-neutral-900 resize-none"
+                    className="w-full rounded-2xl bg-surface-secondary border-0 py-1.5 px-3 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 resize-none"
                   />
                 </div>
               ))}
@@ -356,7 +356,7 @@ export function RecipeEdit() {
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold text-neutral-900 mb-3">Tags</h2>
+            <h2 className="text-lg font-semibold text-text mb-3">Tags</h2>
             <div className="flex items-center gap-2 mb-2">
               <Input value={tagInput} onChange={(e) => setTagInput(e.target.value)} placeholder="Add a tag" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }} />
               <Button type="button" variant="secondary" size="sm" onClick={addTag}>
@@ -368,10 +368,10 @@ export function RecipeEdit() {
                 {tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700"
+                    className="inline-flex items-center gap-1 rounded-full bg-surface-secondary px-3 py-1 text-xs font-medium text-text"
                   >
                     {tag}
-                    <button type="button" onClick={() => removeTag(tag)} className="text-neutral-400 hover:text-red-500">
+                    <button type="button" onClick={() => removeTag(tag)} className="text-muted hover:text-red-600">
                       <X className="h-3 w-3" />
                     </button>
                   </span>

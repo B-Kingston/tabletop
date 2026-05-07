@@ -4,10 +4,10 @@ export function AuthGate() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-8">
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold tracking-tight text-neutral-900 sm:text-5xl">
+        <h1 className="text-4xl font-bold tracking-tight text-text sm:text-5xl">
           Tabletop
         </h1>
-        <p className="text-lg text-neutral-600 max-w-md mx-auto">
+        <p className="text-lg text-text-secondary max-w-md mx-auto">
           Track media, wines, and recipes with the people you share them with.
         </p>
       </div>
@@ -22,7 +22,7 @@ export function AuthGate() {
       
       <SignedIn>
         <div className="flex items-center space-x-4">
-          <span className="text-neutral-600">Welcome back</span>
+          <span className="text-text-secondary">Welcome back</span>
           <UserButton afterSignOutUrl="/" />
         </div>
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-3xl">
@@ -37,9 +37,9 @@ export function AuthGate() {
 
 function FeatureCard({ title, description }: { title: string; description: string }) {
   return (
-    <div className="card text-center space-y-2 hover:shadow-md transition-shadow cursor-pointer">
-      <h3 className="font-semibold text-neutral-900">{title}</h3>
-      <p className="text-sm text-neutral-600">{description}</p>
+    <div className="soft-card-hover text-center space-y-2 cursor-pointer">
+      <h3 className="font-semibold text-text">{title}</h3>
+      <p className="text-sm text-text-secondary">{description}</p>
     </div>
   )
 }

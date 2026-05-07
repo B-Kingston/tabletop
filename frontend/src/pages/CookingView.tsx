@@ -105,11 +105,11 @@ export function CookingView() {
 
   return (
     <ErrorBoundary>
-      <div className="fixed inset-0 z-50 bg-neutral-900 text-white flex flex-col">
-        <header className="flex items-center justify-between px-6 py-4 border-b border-neutral-800">
+      <div className="fixed inset-0 z-50 bg-text text-surface flex flex-col">
+        <header className="flex items-center justify-between px-6 py-4 border-b border-border-subtle/10">
           <h1 className="text-lg font-semibold truncate">{recipe.title}</h1>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-neutral-400">
+            <span className="text-sm text-muted">
               Step {currentStep + 1} of {steps.length}
             </span>
             <button
@@ -119,7 +119,7 @@ export function CookingView() {
                   params: { instanceId, recipeId },
                 })
               }
-              className="rounded-sm p-1 text-neutral-400 hover:text-white transition-colors"
+              className="rounded-sm p-1 text-muted hover:text-surface transition-colors"
               aria-label="Exit cooking view"
             >
               <X className="h-6 w-6" />
@@ -140,16 +140,16 @@ export function CookingView() {
               {step ? (
                 <div className="space-y-8">
                   {step.title && (
-                    <h2 className="text-3xl font-bold text-white">{step.title}</h2>
+                    <h2 className="text-3xl font-bold text-surface">{step.title}</h2>
                   )}
-                  <p className="text-xl leading-relaxed text-neutral-200">{step.content}</p>
+                  <p className="text-xl leading-relaxed text-surface/80">{step.content}</p>
 
                   {step.durationMin && step.durationMin > 0 && (
-                    <div className="mt-8 rounded-xl bg-neutral-800 p-6">
+                    <div className="mt-8 rounded-xl bg-surface-secondary/10 border border-border-subtle/30 p-6">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <Timer className="h-6 w-6 text-neutral-400" />
-                          <span className="text-sm text-neutral-400">Timer: {step.durationMin} min</span>
+                          <Timer className="h-6 w-6 text-muted" />
+                          <span className="text-sm text-muted">Timer: {step.durationMin} min</span>
                         </div>
                         <div className="flex gap-2">
                           {timerSeconds === null ? (
@@ -161,13 +161,13 @@ export function CookingView() {
                             </Button>
                           ) : (
                             <>
-                              <span className="text-3xl font-mono font-bold text-white">
+                              <span className="text-3xl font-mono font-bold text-surface">
                                 {formatTime(timerSeconds)}
                               </span>
                               <Button variant="secondary" onClick={toggleTimer}>
                                 {timerRunning ? 'Pause' : 'Resume'}
                               </Button>
-                              <Button variant="ghost" onClick={resetTimer} className="text-neutral-400">
+                              <Button variant="ghost" onClick={resetTimer} className="text-muted">
                                 Reset
                               </Button>
                             </>
@@ -178,17 +178,17 @@ export function CookingView() {
                   )}
 
                   {currentStep === 0 && recipe.ingredients && recipe.ingredients.length > 0 && (
-                    <div className="mt-8 rounded-xl bg-neutral-800 p-6">
-                      <h3 className="text-xl font-semibold mb-4 text-white">Ingredients</h3>
+                    <div className="mt-8 rounded-xl bg-surface-secondary/10 border border-border-subtle/30 p-6">
+                      <h3 className="text-xl font-semibold mb-4 text-surface">Ingredients</h3>
                       <ul className="space-y-2">
                         {recipe.ingredients.map((ing) => (
-                          <li key={ing.id} className="flex items-center gap-3 text-lg text-neutral-300">
-                            <span className="text-neutral-500">
+                          <li key={ing.id} className="flex items-center gap-3 text-lg text-surface/70">
+                            <span className="text-muted">
                               {ing.quantity} {ing.unit}
                             </span>
                             <span>{ing.name}</span>
                             {ing.optional && (
-                              <span className="text-xs text-neutral-500">(optional)</span>
+                              <span className="text-xs text-muted">(optional)</span>
                             )}
                           </li>
                         ))}
@@ -198,21 +198,21 @@ export function CookingView() {
                 </div>
               ) : (
                 <div className="text-center py-16">
-                  <h2 className="text-3xl font-bold text-white mb-4">No steps defined</h2>
-                  <p className="text-lg text-neutral-400">Add steps to this recipe to use the cooking view.</p>
+                  <h2 className="text-3xl font-bold text-surface mb-4">No steps defined</h2>
+                  <p className="text-lg text-muted">Add steps to this recipe to use the cooking view.</p>
                 </div>
               )}
             </motion.div>
           </AnimatePresence>
         </div>
 
-        <footer className="flex items-center justify-between border-t border-neutral-800 px-6 py-4">
+        <footer className="flex items-center justify-between border-t border-border-subtle/30 px-6 py-4">
           <Button
             variant="ghost"
             size="lg"
             onClick={() => setCurrentStep((s) => Math.max(s - 1, 0))}
             disabled={currentStep === 0}
-            className="text-neutral-400 hover:text-white"
+            className="text-muted hover:text-surface"
           >
             <ChevronLeft className="mr-2 h-6 w-6" />
             Previous
@@ -223,7 +223,7 @@ export function CookingView() {
               <div
                 key={i}
                 className={`h-2 w-2 rounded-full transition-colors ${
-                  i === currentStep ? 'bg-white' : 'bg-neutral-700'
+                  i === currentStep ? 'bg-surface' : 'bg-muted/30'
                 }`}
               />
             ))}
@@ -234,7 +234,7 @@ export function CookingView() {
             size="lg"
             onClick={() => setCurrentStep((s) => Math.min(s + 1, steps.length - 1))}
             disabled={currentStep >= steps.length - 1}
-            className="text-neutral-400 hover:text-white"
+            className="text-muted hover:text-surface"
           >
             Next
             <ChevronRight className="ml-2 h-6 w-6" />

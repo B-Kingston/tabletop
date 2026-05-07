@@ -84,7 +84,6 @@ func main() {
 
 	instanceService := services.NewInstanceService(instanceRepo, userRepo)
 	mediaService := services.NewMediaService(mediaRepo)
-	recipeService := services.NewRecipeService(recipeRepo)
 	wineService := services.NewWineService(wineRepo)
 
 	nightRepo := repositories.NewNightRepository(db.DB)
@@ -95,6 +94,7 @@ func main() {
 		openaiRateLimiter = redisClient.Client
 	}
 	openaiService := services.NewOpenAIService(cfg.OpenAIAPIKey, openaiRateLimiter, 20, cfg.Environment == "production")
+	recipeService := services.NewRecipeService(recipeRepo, openaiService)
 	chatService := services.NewChatService(chatSessionRepo, chatMessageRepo, openaiService)
 	memberMessageService := services.NewMemberMessageService(memberMessageRepo)
 	omdbCacheRepo := repositories.NewOMDBCacheRepository(db.DB)

@@ -122,5 +122,8 @@ func (c *Config) Validate() error {
 	if c.OMDBAPIKey == "" {
 		return fmt.Errorf("OMDB_API_KEY is required")
 	}
+	if c.OpenAIAPIKey == "" {
+		return fmt.Errorf("OPENAI_API_KEY is required")
+	}
 	return nil
 }

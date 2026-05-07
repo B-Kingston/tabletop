@@ -203,22 +203,6 @@ func TestHandler_DeleteSession(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-func TestHandler_GenerateRecipe_MissingPrompt(t *testing.T) {
-	r, handler, instanceID, userID := setupChatHandlerTest(t)
-
-	r.POST("/chat/generate-recipe", func(c *gin.Context) {
-		withContext(c, instanceID, userID)
-		handler.GenerateRecipe(c)
-	})
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("POST", "/chat/generate-recipe", bytes.NewReader([]byte(`{}`)))
-	req.Header.Set("Content-Type", "application/json")
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-}
-
 func TestHandler_SendMessage_CrossInstance(t *testing.T) {
 	r, handler, instanceID, userID := setupChatHandlerTest(t)
 

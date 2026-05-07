@@ -35,7 +35,7 @@ export function NightList() {
         transition={{ duration: 0.2 }}
       >
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Nights</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-text">Nights</h1>
           <div className="flex gap-2">
             <Button
               variant="secondary"
@@ -66,13 +66,13 @@ export function NightList() {
         </div>
 
         <div className="flex items-center justify-between mb-6">
-          <p className="text-sm text-neutral-600">
+          <p className="text-sm text-text-secondary">
             {nights?.length ?? 0} {nights?.length === 1 ? 'night' : 'nights'} planned
           </p>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="rounded-lg border-0 py-1.5 px-3 text-sm text-neutral-900 shadow-sm ring-1 ring-inset ring-neutral-200 focus:ring-2 focus:ring-inset focus:ring-neutral-900"
+            className="rounded-full bg-surface-secondary border-0 py-1.5 px-4 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent/30 transition-all duration-150"
           >
             <option value="date">Newest First</option>
             <option value="name">Name A–Z</option>
@@ -89,9 +89,9 @@ export function NightList() {
 
         {sorted && sorted.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Moon className="h-12 w-12 text-neutral-300 mb-4" />
-            <h3 className="text-lg font-medium text-neutral-900 mb-2">No nights yet</h3>
-            <p className="text-sm text-neutral-600 max-w-sm mb-6">
+            <Moon className="h-12 w-12 text-muted mb-4" strokeWidth={1.5} />
+            <h3 className="text-lg font-medium text-text mb-2">No evenings planned yet</h3>
+            <p className="text-sm text-text-secondary max-w-sm mb-6">
               Spin the slot machine to randomly combine wines, recipes, and media into a curated evening plan.
             </p>
             <div className="flex gap-3">
@@ -111,7 +111,7 @@ export function NightList() {
         )}
 
         {sorted && sorted.length > 0 && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {sorted.map((night: Night) => (
               <NightCard key={night.id} night={night} instanceId={instanceId} />
             ))}

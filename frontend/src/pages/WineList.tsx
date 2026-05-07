@@ -47,7 +47,7 @@ export function WineList() {
         transition={{ duration: 0.2 }}
       >
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Wines</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-text">Wines</h1>
           <Button
             size="sm"
             onClick={() =>
@@ -63,16 +63,12 @@ export function WineList() {
         </div>
 
         <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex gap-1 overflow-x-auto">
+          <div className="segmented-control">
             {typeTabs.map((tab) => (
               <button
                 key={tab.value}
                 onClick={() => setTypeFilter(tab.value)}
-                className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                  typeFilter === tab.value
-                    ? 'bg-neutral-900 text-white'
-                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-                }`}
+                className={`segmented-control-item${typeFilter === tab.value ? ' active' : ''}`}
               >
                 {tab.label}
               </button>
@@ -81,7 +77,7 @@ export function WineList() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="rounded-lg border-0 py-1.5 px-3 text-sm text-neutral-900 shadow-sm ring-1 ring-inset ring-neutral-200 focus:ring-2 focus:ring-inset focus:ring-neutral-900"
+            className="rounded-full border-0 py-1.5 px-3 text-sm text-text bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-accent/30"
           >
             <option value="date">Newest First</option>
             <option value="rating">Highest Rated</option>
@@ -90,7 +86,7 @@ export function WineList() {
         </div>
 
         {error && (
-          <div className="rounded-lg bg-red-50 p-4 text-sm text-red-700 mb-4">
+          <div className="rounded-2xl bg-red-50 p-4 text-sm text-rose-700 mb-4">
             Failed to load wines. Please try again.
           </div>
         )}
@@ -99,16 +95,16 @@ export function WineList() {
 
         {sorted && sorted.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Search className="h-12 w-12 text-neutral-300 mb-4" />
-            <h3 className="text-lg font-medium text-neutral-900 mb-2">No wines found</h3>
-            <p className="text-sm text-neutral-600">
+            <Search className="h-12 w-12 text-muted mb-4" />
+            <h3 className="text-lg font-medium text-text mb-2">The cellar is empty</h3>
+            <p className="text-sm text-text-secondary">
               {typeFilter ? 'Try adjusting your filters.' : 'Add your first wine to get started.'}
             </p>
           </div>
         )}
 
         {sorted && sorted.length > 0 && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {sorted.map((wine: Wine) => (
               <WineCard key={wine.id} wine={wine} instanceId={instanceId} />
             ))}

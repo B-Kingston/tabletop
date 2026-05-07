@@ -84,6 +84,7 @@ func TestValidate_Success(t *testing.T) {
 		ClerkIssuer:    "https://clerk.test.com",
 		ClerkAudience:  "test-audience",
 		OMDBAPIKey:     "omdb_test",
+		OpenAIAPIKey:   "sk-test",
 	}
 
 	err := cfg.Validate()

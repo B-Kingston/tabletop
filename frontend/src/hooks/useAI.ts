@@ -10,11 +10,3 @@ export function useAIChat(instanceId: string) {
   })
 }
 
-export function useGenerateRecipe(instanceId: string) {
-  return useMutation({
-    mutationFn: async (prompt: string) => {
-      const { data } = await api.post(`/instances/${instanceId}/chat/generate-recipe`, { prompt })
-      return data
-    },
-  })
-}

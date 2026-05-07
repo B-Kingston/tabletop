@@ -60,9 +60,9 @@ export function ChatPage() {
         transition={{ duration: 0.2 }}
         className="flex h-[calc(100vh-8rem)] gap-4"
       >
-        <div className="w-64 flex-shrink-0 flex flex-col border-r border-neutral-200 pr-4">
+        <div className="w-64 flex-shrink-0 flex flex-col border-r border-border pr-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-neutral-900">AI Assistant Sessions</h2>
+            <h2 className="text-sm font-semibold text-text">AI Assistant Sessions</h2>
             <Button variant="ghost" size="sm" onClick={handleCreateSession}>
               <Plus className="h-4 w-4" />
             </Button>
@@ -76,8 +76,8 @@ export function ChatPage() {
                 key={session.id}
                 className={`group flex items-center justify-between rounded-lg px-3 py-2 text-sm cursor-pointer transition-colors ${
                   activeSessionId === session.id
-                    ? 'bg-neutral-100 text-neutral-900'
-                    : 'text-neutral-600 hover:bg-neutral-50'
+                    ? 'bg-surface-secondary text-text'
+                    : 'text-text-secondary hover:bg-surface-secondary/50'
                 }`}
                 onClick={() => setActiveSessionId(session.id)}
               >
@@ -88,7 +88,7 @@ export function ChatPage() {
                     setSessionToDelete(session.id)
                     setDeleteOpen(true)
                   }}
-                  className="opacity-0 group-hover:opacity-100 text-neutral-400 hover:text-red-500 transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 text-muted hover:text-red-600 transition-opacity"
                   aria-label="Delete session"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -110,8 +110,8 @@ export function ChatPage() {
               <ChatInput onSend={handleSend} disabled={sendMessage.isPending} />
             </>
           ) : (
-            <div className="flex flex-1 items-center justify-center text-neutral-400">
-              <p className="text-sm">Select or create an AI Assistant session</p>
+            <div className="flex flex-1 items-center justify-center text-muted">
+              <p className="text-sm">Start a new conversation</p>
             </div>
           )}
         </div>

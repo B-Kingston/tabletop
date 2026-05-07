@@ -24,11 +24,12 @@ type StepInput struct {
 }
 
 type RecipeService struct {
-	recipeRepo repositories.RecipeRepository
+	recipeRepo   repositories.RecipeRepository
+	openaiClient *OpenAIService
 }
 
-func NewRecipeService(recipeRepo repositories.RecipeRepository) *RecipeService {
-	return &RecipeService{recipeRepo: recipeRepo}
+func NewRecipeService(recipeRepo repositories.RecipeRepository, openaiClient *OpenAIService) *RecipeService {
+	return &RecipeService{recipeRepo: recipeRepo, openaiClient: openaiClient}
 }
 
 func (s *RecipeService) Create(
@@ -204,4 +205,19 @@ func (s *RecipeService) Update(
 
 func (s *RecipeService) Delete(ctx context.Context, instanceID, id uuid.UUID) error {
 	return s.recipeRepo.Delete(ctx, instanceID, id)
+}
+
+// GenerateRecipe uses the OpenAI service to generate a structured recipe from
+// a natural-language prompt. Rate limiting is applied per user before the
+// OpenAI call.
+func (s *RecipeService) GenerateRecipe(ctx context.Context, userID uuid.UUID, prompt string) (*GeneratedRecipe, error) {
+	if s.openaiClient == nil {
+		return nil, ErrRateLimiterUnavailable
+	}
+
+	if err := s.openaiClient.CheckRateLimit(ctx, userID); err != nil {
+		return nil, fmt.Errorf("rate limit: %w", err)
+	}
+
+	return s.openaiClient.GenerateRecipe(ctx, prompt)
 }

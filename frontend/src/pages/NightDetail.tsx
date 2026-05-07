@@ -114,7 +114,7 @@ export function NightDetail() {
       >
         <button
           onClick={() => navigate({ to: '/instances/$instanceId/nights', params: { instanceId } })}
-          className="mb-6 flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+          className="mb-6 flex items-center gap-2 text-sm text-text-secondary hover:text-accent transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Nights
@@ -130,9 +130,9 @@ export function NightDetail() {
                   className="text-xl font-bold"
                 />
               ) : (
-                <h1 className="text-2xl font-bold tracking-tight text-neutral-900">{night.name}</h1>
+                <h1 className="text-2xl font-bold tracking-tight text-text">{night.name}</h1>
               )}
-              <p className="text-sm text-neutral-500 mt-1">
+              <p className="text-sm text-muted mt-1">
                 Created {new Date(night.createdAt).toLocaleDateString()}
               </p>
             </div>
@@ -170,12 +170,12 @@ export function NightDetail() {
               return (
                 <div
                   key={key}
-                  className={`rounded-xl p-5 shadow-sm ring-1 ${
+                  className={`${
                     item
-                      ? 'bg-white ring-neutral-200 cursor-pointer hover:shadow-md transition-shadow'
+                      ? 'soft-card-hover p-5 cursor-pointer'
                       : wasDeleted
-                      ? 'bg-red-50 ring-red-200'
-                      : 'bg-neutral-50 ring-neutral-200'
+                      ? 'rounded-xl p-5 shadow-sm bg-red-50 ring-1 ring-red-200'
+                      : 'rounded-xl p-5 bg-surface-secondary/50 border border-border'
                   }`}
                   onClick={() => {
                     if (item) {
@@ -188,19 +188,19 @@ export function NightDetail() {
                   role={item ? 'button' : undefined}
                 >
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100">
-                      <Icon className="h-4 w-4 text-neutral-600" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-secondary">
+                      <Icon className="h-4 w-4 text-text-secondary" strokeWidth={1.5} />
                     </div>
-                    <span className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                    <span className="text-xs font-medium text-muted uppercase tracking-wide">
                       {label}
                     </span>
                   </div>
 
                   {item ? (
                     <div>
-                      <p className="font-medium text-neutral-900 text-sm">{getItemLabel(item)}</p>
+                      <p className="font-medium text-text text-sm">{getItemLabel(item)}</p>
                       {'type' in item && typeof item.type === 'string' && (
-                        <p className="text-xs text-neutral-500 capitalize mt-1">{item.type}</p>
+                        <p className="text-xs text-muted capitalize mt-1">{item.type}</p>
                       )}
                     </div>
                   ) : wasDeleted ? (
@@ -209,7 +209,7 @@ export function NightDetail() {
                       <span className="text-sm">Deleted item</span>
                     </div>
                   ) : (
-                    <span className="text-sm text-neutral-400">Not selected</span>
+                    <span className="text-sm text-muted">Not selected</span>
                   )}
                 </div>
               )

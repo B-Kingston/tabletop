@@ -1,6 +1,7 @@
 package recipes
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -28,6 +29,7 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 		recipes.GET("/:recipe_id", h.Get)
 		recipes.PATCH("/:recipe_id", h.Update)
 		recipes.DELETE("/:recipe_id", h.Delete)
+		recipes.POST("/generate", h.Generate)
 	}
 }
 
@@ -316,4 +318,52 @@ func (h *Handler) Delete(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": nil})
+}
+
+func (h *Handler) Generate(c *gin.Context) {
+	instanceID, ok := middleware.GetInstanceID(c)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid instance"})
+		return
+	}
+
+	userID, ok := middleware.GetInternalUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not identified"})
+		return
+	}
+
+	var req struct {
+		Prompt string `json:"prompt" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	_ = instanceID // validated by RequireInstanceMembership middleware
+
+	generated, err := h.service.GenerateRecipe(c.Request.Context(), userID, req.Prompt)
+	if err != nil {
+		if errors.Is(err, services.ErrRateLimiterUnavailable) {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "AI service unavailable"})
+			return
+		}
+		if errors.Is(err, services.ErrDailyLimitExceeded) {
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "daily AI request limit reached"})
+			return
+		}
+		if errors.Is(err, services.ErrOpenAIUpstream) {
+			c.JSON(http.StatusBadGateway, gin.H{"error": "AI upstream service error"})
+			return
+		}
+		if errors.Is(err, services.ErrGeneratedRecipeInvalid) {
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": generated})
 }

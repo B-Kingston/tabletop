@@ -90,7 +90,7 @@ export function SlotMachine({ wines, recipes, media, selectedCategories, onCompl
   return (
     <div className="flex flex-col items-center gap-8">
       {hasEmptyCategories && (
-        <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div className="rounded-lg bg-accent-surface px-4 py-3 text-sm text-accent">
           Some selected categories have no items yet. Only categories with items will spin.
         </div>
       )}
@@ -123,8 +123,8 @@ export function SlotMachine({ wines, recipes, media, selectedCategories, onCompl
         disabled={!canSpin}
         className={`rounded-full px-8 py-3 text-base font-semibold transition-colors ${
           canSpin
-            ? 'bg-neutral-900 text-white hover:bg-neutral-800'
-            : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+            ? 'bg-accent text-white shadow-soft hover:bg-accent/90'
+            : 'bg-surface-secondary text-muted cursor-not-allowed'
         }`}
       >
         {isSpinning ? 'Spinning...' : 'Spin the Night'}

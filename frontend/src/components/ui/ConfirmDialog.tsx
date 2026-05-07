@@ -30,16 +30,17 @@ export function ConfirmDialog({
         <DialogTitle>{title}</DialogTitle>
       </DialogHeader>
       <DialogBody>
-        <p className="text-sm text-neutral-600">{description}</p>
+        <p className="text-sm text-text-secondary">{description}</p>
       </DialogBody>
       <DialogFooter>
         <Button variant="secondary" onClick={onClose} disabled={loading}>
           {cancelLabel}
         </Button>
         <Button
-          variant={variant === 'destructive' ? 'destructive' : 'default'}
+          variant="default"
           onClick={onConfirm}
           disabled={loading}
+          className={variant === 'destructive' ? 'bg-red-600 hover:bg-red-700' : ''}
         >
           {loading ? '...' : confirmLabel}
         </Button>

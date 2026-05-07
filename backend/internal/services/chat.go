@@ -127,17 +127,4 @@ func (s *ChatService) DeleteSession(ctx context.Context, instanceID, id uuid.UUI
 	return s.sessionRepo.Delete(ctx, instanceID, id)
 }
 
-func (s *ChatService) GenerateRecipe(ctx context.Context, instanceID, userID uuid.UUID, prompt string) (*OpenAIResponse, error) {
-	// Check rate limit before calling OpenAI
-	if s.openaiClient != nil {
-		if err := s.openaiClient.CheckRateLimit(ctx, userID); err != nil {
-			return nil, fmt.Errorf("rate limit: %w", err)
-		}
-	}
 
-	messages := []OpenAIMessage{
-		{Role: "system", Content: RecipeSystemPrompt},
-		{Role: "user", Content: prompt},
-	}
-	return s.openaiClient.ChatCompletion(ctx, messages)
-}

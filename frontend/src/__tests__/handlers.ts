@@ -238,6 +238,28 @@ export const recipeHandlers = [
       error: null,
     })
   }),
+  http.post(`${BASE}/instances/:instanceId/recipes/generate`, async ({ request }) => {
+    const body = await request.json() as { prompt?: string }
+    return HttpResponse.json({
+      data: {
+        title: 'Lemon Pasta',
+        description: body.prompt ? 'A bright weeknight pasta.' : '',
+        prepTime: 10,
+        cookTime: 15,
+        servings: 2,
+        ingredients: [
+          { name: 'spaghetti', quantity: '200', unit: 'g', optional: false },
+          { name: 'lemon', quantity: '1', unit: '', optional: false },
+        ],
+        steps: [
+          { content: 'Boil pasta until al dente.', durationMin: 10 },
+          { content: 'Toss with lemon and olive oil.', durationMin: 5 },
+        ],
+        tags: ['pasta', 'quick'],
+      },
+      error: null,
+    })
+  }),
   http.post(`${BASE}/instances/:instanceId/recipes`, async ({ request }) => {
     const body = await request.json() as Record<string, unknown>
     return HttpResponse.json({

@@ -111,17 +111,17 @@ export function SpinTheNight() {
           onClick={() =>
             navigate({ to: '/instances/$instanceId/nights', params: { instanceId } })
           }
-          className="mb-6 flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+          className="mb-6 flex items-center gap-2 text-sm text-text-secondary hover:text-accent transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Nights
         </button>
 
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 mb-2">
+          <h1 className="text-2xl font-bold tracking-tight text-text mb-2">
             Spin the Night
           </h1>
-          <p className="text-sm text-neutral-600">
+          <p className="text-sm text-text-secondary">
             Select which categories to include, then spin for a random combination.
           </p>
         </div>
@@ -130,9 +130,9 @@ export function SpinTheNight() {
           <GridSkeleton count={3} />
         ) : allEmpty ? (
           <div className="text-center py-12">
-            <Dices className="h-12 w-12 text-neutral-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-neutral-900 mb-2">Nothing to spin yet</h3>
-            <p className="text-sm text-neutral-600 mb-4">
+            <Dices className="h-12 w-12 text-muted mx-auto mb-4" strokeWidth={1.5} />
+            <h3 className="text-lg font-medium text-text mb-2">Nothing to spin yet</h3>
+            <p className="text-sm text-text-secondary mb-4">
               Add some wines, recipes, or media items first.
             </p>
             <div className="flex justify-center gap-3">
@@ -173,10 +173,10 @@ export function SpinTheNight() {
                     disabled={!hasItems}
                     className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                       isSelected
-                        ? 'bg-neutral-900 text-white'
+                        ? 'bg-accent text-white'
                         : hasItems
-                        ? 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-                        : 'bg-neutral-50 text-neutral-300 cursor-not-allowed'
+                        ? 'bg-surface-secondary text-text-secondary hover:bg-surface'
+                        : 'bg-surface-secondary/50 text-muted cursor-not-allowed'
                     }`}
                   >
                     <Icon className="h-4 w-4" />
@@ -202,37 +202,37 @@ export function SpinTheNight() {
                   animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
                   exit={reducedMotion ? {} : { opacity: 0, y: 20 }}
                   transition={{ duration: reducedMotion ? 0 : 0.3 }}
-                  className="mt-10 rounded-xl bg-white p-6 shadow-sm ring-1 ring-neutral-200"
+                  className="mt-10 soft-card"
                 >
-                  <h2 className="text-lg font-semibold text-neutral-900 mb-4">Your Night</h2>
+                  <h2 className="text-lg font-semibold text-text mb-4">Your Night</h2>
 
                   <div className="space-y-3 mb-6">
                     {spinResult.wineId && wines && (
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50">
-                          <Wine className="h-4 w-4 text-red-600" />
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-surface">
+                          <Wine className="h-4 w-4 text-accent" strokeWidth={1.5} />
                         </div>
-                        <span className="text-sm text-neutral-700">
+                        <span className="text-sm text-text-secondary">
                           {wines.find((w) => w.id === spinResult.wineId)?.name}
                         </span>
                       </div>
                     )}
                     {spinResult.recipeId && recipes && (
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-50">
-                          <ChefHat className="h-4 w-4 text-amber-600" />
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-surface">
+                          <ChefHat className="h-4 w-4 text-accent" strokeWidth={1.5} />
                         </div>
-                        <span className="text-sm text-neutral-700">
+                        <span className="text-sm text-text-secondary">
                           {recipes.find((r) => r.id === spinResult.recipeId)?.title}
                         </span>
                       </div>
                     )}
                     {spinResult.mediaId && mediaItems && (
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50">
-                          <Film className="h-4 w-4 text-blue-600" />
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-secondary">
+                          <Film className="h-4 w-4 text-text-secondary" strokeWidth={1.5} />
                         </div>
-                        <span className="text-sm text-neutral-700">
+                        <span className="text-sm text-text-secondary">
                           {mediaItems.find((m) => m.id === spinResult.mediaId)?.title}
                         </span>
                       </div>
@@ -241,7 +241,7 @@ export function SpinTheNight() {
 
                   <div className="space-y-3">
                     <div>
-                      <label htmlFor="night-name" className="block text-sm font-medium text-neutral-700 mb-1">
+                      <label htmlFor="night-name" className="block text-sm font-medium text-text-secondary mb-1">
                         Name
                       </label>
                       <Input

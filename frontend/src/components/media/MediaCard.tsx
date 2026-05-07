@@ -12,10 +12,10 @@ interface MediaCardProps {
 }
 
 const statusColors: Record<string, string> = {
-  planning: 'bg-blue-100 text-blue-700',
-  watching: 'bg-green-100 text-green-700',
-  completed: 'bg-neutral-100 text-neutral-700',
-  dropped: 'bg-red-100 text-red-700',
+  planning: 'bg-accent-surface text-accent',
+  watching: 'bg-surface-secondary text-text-secondary',
+  completed: 'bg-surface-secondary text-muted',
+  dropped: 'bg-red-50 text-red-600',
 }
 
 export function MediaCard({ media, instanceId }: MediaCardProps) {
@@ -34,9 +34,9 @@ export function MediaCard({ media, instanceId }: MediaCardProps) {
           params: { instanceId, mediaId: media.id },
         })
       }
-      className="group text-left w-full rounded-xl bg-white shadow-sm ring-1 ring-neutral-200 overflow-hidden hover:shadow-md transition-shadow"
+      className="group text-left w-full rounded-3xl bg-surface border border-border overflow-hidden hover:shadow-card hover:border-border-subtle transition-all duration-150"
     >
-      <div className="aspect-[2/3] w-full bg-neutral-100 overflow-hidden relative">
+      <div className="aspect-[2/3] w-full bg-surface-secondary overflow-hidden relative">
         {hasPoster ? (
           <img
             src={omdb!.poster}
@@ -45,7 +45,7 @@ export function MediaCard({ media, instanceId }: MediaCardProps) {
             loading="lazy"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-neutral-300">
+          <div className="flex h-full items-center justify-center text-muted">
             <Film className="h-12 w-12" />
           </div>
         )}
@@ -54,7 +54,7 @@ export function MediaCard({ media, instanceId }: MediaCardProps) {
           <span
             className={cn(
               'inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide shadow-sm',
-              statusColors[media.status] || 'bg-neutral-100 text-neutral-600'
+              statusColors[media.status] || 'bg-surface-secondary text-text-secondary'
             )}
           >
             {media.status}
@@ -62,17 +62,17 @@ export function MediaCard({ media, instanceId }: MediaCardProps) {
         </div>
       </div>
       <div className="p-3">
-        <h3 className="text-sm font-medium text-neutral-900 truncate">{media.title}</h3>
+        <h3 className="text-sm font-medium text-text truncate">{media.title}</h3>
         <div className="mt-1 flex items-center justify-between">
-          <span className="text-xs text-neutral-400 uppercase">{media.type === 'tv' ? 'TV' : 'Movie'}</span>
+          <span className="text-xs text-muted uppercase">{media.type === 'tv' ? 'TV' : 'Movie'}</span>
           {media.rating !== null && media.rating !== undefined && (
             <StarRating value={media.rating} readonly size="sm" />
           )}
         </div>
         {omdb?.imdbRating && omdb.imdbRating !== 'N/A' && (
           <div className="mt-1.5 flex items-center gap-1">
-            <span className="text-[10px] font-bold text-yellow-600">IMDb</span>
-            <span className="text-xs font-medium text-neutral-600">{omdb.imdbRating}</span>
+            <span className="text-[10px] font-bold text-accent">IMDb</span>
+            <span className="text-xs font-medium text-text-secondary">{omdb.imdbRating}</span>
           </div>
         )}
       </div>

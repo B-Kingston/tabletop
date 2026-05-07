@@ -79,7 +79,7 @@ export function SpinReel({
 
   return (
     <motion.div
-      className="relative flex flex-col items-center justify-center aspect-square w-full max-w-[200px] rounded-2xl bg-white shadow-sm ring-1 ring-neutral-200 overflow-hidden"
+      className="relative flex flex-col items-center justify-center aspect-square w-full max-w-[200px] rounded-3xl bg-surface border border-border overflow-hidden"
       animate={isSpinning && !reducedMotion ? { y: [0, -3, 3, 0] } : { y: 0 }}
       transition={isSpinning && !reducedMotion ? { repeat: Infinity, duration: 0.12 } : {}}
     >
@@ -96,30 +96,30 @@ export function SpinReel({
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             className="flex flex-col items-center gap-3 text-center"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100">
-              <Icon className="h-6 w-6 text-neutral-700" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-secondary">
+              <Icon className="h-6 w-6 text-text-secondary" strokeWidth={1.5} />
             </div>
-            <span className="text-sm font-medium text-neutral-900 line-clamp-2">
+            <span className="text-sm font-medium text-text line-clamp-2">
               {displayItem.name}
             </span>
-            <span className="text-xs text-neutral-500 capitalize">{label}</span>
+            <span className="text-xs text-muted capitalize">{label}</span>
           </motion.div>
         ) : isSpinning && displayItem ? (
           <div className="flex flex-col items-center gap-3 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100">
-              <Icon className="h-6 w-6 text-neutral-400" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-secondary">
+              <Icon className="h-6 w-6 text-muted" strokeWidth={1.5} />
             </div>
-            <span className="text-sm font-medium text-neutral-600 line-clamp-2">
+            <span className="text-sm font-medium text-text-secondary line-clamp-2">
               {displayItem.name}
             </span>
-            <span className="text-xs text-neutral-400 capitalize">{label}</span>
+            <span className="text-xs text-muted capitalize">{label}</span>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100">
-              <Icon className="h-6 w-6 text-neutral-400" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-secondary">
+              <Icon className="h-6 w-6 text-muted" strokeWidth={1.5} />
             </div>
-            <span className="text-xs text-neutral-500 capitalize">{label}</span>
+            <span className="text-xs text-muted capitalize">{label}</span>
           </div>
         )}
       </div>

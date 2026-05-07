@@ -26,7 +26,6 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 		chat.GET("/sessions/:session_id", h.GetSession)
 		chat.POST("/sessions/:session_id/messages", h.SendMessage)
 		chat.DELETE("/sessions/:session_id", h.DeleteSession)
-		chat.POST("/generate-recipe", h.GenerateRecipe)
 	}
 }
 
@@ -176,44 +175,4 @@ func (h *Handler) DeleteSession(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": nil})
-}
-
-type generateRecipeRequest struct {
-	Prompt string `json:"prompt" binding:"required"`
-}
-
-func (h *Handler) GenerateRecipe(c *gin.Context) {
-	instanceID, ok := middleware.GetInstanceID(c)
-	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid instance"})
-		return
-	}
-
-	userID, ok := middleware.GetInternalUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not identified"})
-		return
-	}
-
-	var req generateRecipeRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	resp, err := h.service.GenerateRecipe(c.Request.Context(), instanceID, userID, req.Prompt)
-	if err != nil {
-		if errors.Is(err, services.ErrRateLimiterUnavailable) {
-			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "OpenAI rate limiter unavailable"})
-			return
-		}
-		if errors.Is(err, services.ErrDailyLimitExceeded) {
-			c.JSON(http.StatusTooManyRequests, gin.H{"error": "daily rate limit exceeded"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": resp})
 }

@@ -55,19 +55,19 @@ export function WineEdit() {
           onClick={() =>
             navigate({ to: '/instances/$instanceId/wines', params: { instanceId } })
           }
-          className="mb-6 flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+          className="mb-6 flex items-center gap-2 text-sm text-text-secondary hover:text-text transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Wines
         </button>
 
-        <h1 className="text-2xl font-bold tracking-tight text-neutral-900 mb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-text mb-6">
           New Wine
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-4 max-w-lg">
           <div>
-            <label htmlFor="wine-name" className="block text-sm font-medium text-neutral-700 mb-1">
+            <label htmlFor="wine-name" className="block text-sm font-medium text-text-secondary mb-1">
               Name
             </label>
             <Input
@@ -80,7 +80,7 @@ export function WineEdit() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Type</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Type</label>
             <div className="flex flex-wrap gap-2">
               {wineTypes.map((t) => (
                 <button
@@ -89,8 +89,8 @@ export function WineEdit() {
                   onClick={() => setType(t)}
                   className={`rounded-full px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
                     type === t
-                      ? 'bg-neutral-900 text-white'
-                      : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                      ? 'bg-accent text-white'
+                      : 'bg-surface-secondary text-text-secondary hover:bg-surface-secondary/70'
                   }`}
                 >
                   {t === 'rose' ? 'Rosé' : t}
@@ -101,7 +101,7 @@ export function WineEdit() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="wine-cost" className="block text-sm font-medium text-neutral-700 mb-1">
+              <label htmlFor="wine-cost" className="block text-sm font-medium text-text-secondary mb-1">
                 Cost ($)
               </label>
               <Input
@@ -115,7 +115,7 @@ export function WineEdit() {
               />
             </div>
             <div>
-              <label htmlFor="wine-consumed" className="block text-sm font-medium text-neutral-700 mb-1">
+              <label htmlFor="wine-consumed" className="block text-sm font-medium text-text-secondary mb-1">
                 Consumed
               </label>
               <Input
@@ -128,12 +128,12 @@ export function WineEdit() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 mb-1">Rating</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Rating</label>
             <StarRating value={rating} onChange={(v) => setRating(v)} />
           </div>
 
           <div>
-            <label htmlFor="wine-notes" className="block text-sm font-medium text-neutral-700 mb-1">
+            <label htmlFor="wine-notes" className="block text-sm font-medium text-text-secondary mb-1">
               Notes
             </label>
             <textarea
@@ -142,7 +142,7 @@ export function WineEdit() {
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               placeholder="Tasting notes, pairing suggestions..."
-              className="block w-full rounded-lg border-0 py-2.5 px-3 text-neutral-900 shadow-sm ring-1 ring-inset ring-neutral-200 placeholder:text-neutral-400 focus:ring-2 focus:ring-inset focus:ring-neutral-900 sm:text-sm resize-none"
+              className="block w-full rounded-2xl border-0 py-2.5 px-3 text-text bg-surface-secondary placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm resize-none"
             />
           </div>
 

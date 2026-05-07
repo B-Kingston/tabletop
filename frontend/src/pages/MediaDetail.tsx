@@ -21,21 +21,21 @@ function RatingBadge({ source, value }: { source: string; value: string }) {
   if (!value || value === 'N/A') return null
 
   let icon: React.ReactNode = null
-  let colorClass = 'bg-neutral-100 text-neutral-700'
+  let colorClass = 'bg-surface-secondary text-text-secondary'
 
   if (source.includes('Internet Movie Database')) {
-    icon = <span className="text-xs font-bold text-yellow-600">IMDb</span>
-    colorClass = 'bg-yellow-50 text-yellow-800 ring-1 ring-yellow-200'
+    icon = <span className="text-xs font-bold text-accent">IMDb</span>
+    colorClass = 'bg-accent-surface text-accent'
   } else if (source.includes('Rotten Tomatoes')) {
     icon = <span className="text-xs font-bold text-red-600">RT</span>
-    colorClass = 'bg-red-50 text-red-800 ring-1 ring-red-200'
+    colorClass = 'bg-red-50 text-red-700'
   } else if (source.includes('Metacritic')) {
-    icon = <span className="text-xs font-bold text-blue-600">MC</span>
-    colorClass = 'bg-blue-50 text-blue-800 ring-1 ring-blue-200'
+    icon = <span className="text-xs font-bold text-accent">MC</span>
+    colorClass = 'bg-surface-secondary text-text-secondary'
   }
 
   return (
-    <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${colorClass}`}>
+    <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border border-border ${colorClass}`}>
       {icon}
       <span>{value}</span>
     </div>
@@ -45,17 +45,17 @@ function RatingBadge({ source, value }: { source: string; value: string }) {
 function MetaItem({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | null | undefined }) {
   if (!value || value === 'N/A') return null
   return (
-    <div className="flex items-center gap-2 text-sm text-neutral-600">
-      <Icon className="h-4 w-4 text-neutral-400 shrink-0" />
-      <span className="text-neutral-400 shrink-0">{label}</span>
-      <span className="font-medium text-neutral-800">{value}</span>
+    <div className="flex items-center gap-2 text-sm text-text-secondary">
+      <Icon className="h-4 w-4 text-muted shrink-0" />
+      <span className="text-muted shrink-0">{label}</span>
+      <span className="font-medium text-text">{value}</span>
     </div>
   )
 }
 
 function GenrePill({ genre }: { genre: string }) {
   return (
-    <span className="inline-flex rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-600 ring-1 ring-neutral-200">
+    <span className="inline-flex rounded-full bg-surface-secondary px-3 py-1 text-xs font-medium text-text-secondary border border-border">
       {genre.trim()}
     </span>
   )
@@ -80,7 +80,7 @@ export function MediaDetail() {
 
   if (error || !media) {
     return (
-      <div className="rounded-lg bg-red-50 p-4 text-sm text-red-700">
+      <div className="rounded-2xl bg-red-50/80 border border-red-100 p-4 text-sm text-red-700">
         Failed to load media. Please try again.
       </div>
     )
@@ -120,7 +120,7 @@ export function MediaDetail() {
       >
         <button
           onClick={() => navigate({ to: '/instances/$instanceId/media', params: { instanceId } })}
-          className="mb-6 flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+          className="mb-6 flex items-center gap-2 text-sm text-text-secondary hover:text-text transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Media
@@ -129,7 +129,7 @@ export function MediaDetail() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-[300px_1fr]">
           {/* Poster */}
           <div className="space-y-4">
-            <div className="aspect-[2/3] w-full overflow-hidden rounded-xl bg-neutral-100 shadow-sm ring-1 ring-neutral-200">
+            <div className="aspect-[2/3] w-full overflow-hidden rounded-3xl bg-surface-secondary">
               {hasPoster ? (
                 <img
                   src={omdb!.poster}
@@ -138,7 +138,7 @@ export function MediaDetail() {
                   loading="eager"
                 />
               ) : (
-                <div className="flex h-full items-center justify-center text-neutral-300">
+                <div className="flex h-full items-center justify-center text-muted">
                   <Film className="h-16 w-16" />
                 </div>
               )}
@@ -154,7 +154,7 @@ export function MediaDetail() {
             )}
 
             {/* Meta sidebar */}
-            <div className="space-y-2.5 rounded-xl bg-neutral-50 p-4 ring-1 ring-neutral-200">
+            <div className="space-y-2.5 bg-surface-secondary/50 border border-border rounded-3xl p-4">
               <MetaItem icon={Calendar} label="Released" value={omdb?.released ?? media.releaseYear} />
               <MetaItem icon={Clock} label="Runtime" value={omdb?.runtime} />
               <MetaItem icon={Globe} label="Country" value={omdb?.country} />
@@ -169,18 +169,18 @@ export function MediaDetail() {
             <div>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h1 className="text-3xl font-bold tracking-tight text-neutral-900">{media.title}</h1>
+                  <h1 className="text-3xl font-bold tracking-tight text-text">{media.title}</h1>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="inline-flex rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-600 ring-1 ring-neutral-200 capitalize">
+                    <span className="inline-flex rounded-full bg-surface-secondary px-2.5 py-0.5 text-xs font-medium text-text-secondary capitalize">
                       {typeLabel}
                     </span>
                     {omdb?.rated && omdb.rated !== 'N/A' && (
-                      <span className="inline-flex rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-600 ring-1 ring-neutral-200">
+                      <span className="inline-flex rounded-full bg-surface-secondary px-2.5 py-0.5 text-xs font-medium text-text-secondary">
                         {omdb.rated}
                       </span>
                     )}
                     {omdb?.year && omdb.year !== 'N/A' && (
-                      <span className="text-sm text-neutral-500">{omdb.year}</span>
+                      <span className="text-sm text-muted">{omdb.year}</span>
                     )}
                   </div>
                 </div>
@@ -188,7 +188,7 @@ export function MediaDetail() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setDeleteOpen(true)}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50/50"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -206,48 +206,46 @@ export function MediaDetail() {
 
             {/* Plot */}
             {(omdb?.plot || media.overview) && (
-              <p className="text-sm leading-relaxed text-neutral-700">
+              <p className="text-sm leading-relaxed text-text-secondary">
                 {omdb?.plot && omdb.plot !== 'N/A' ? omdb.plot : media.overview}
               </p>
             )}
 
             {/* Cast & Crew */}
             {(omdb?.director || omdb?.writer || omdb?.actors) && (
-              <div className="grid gap-3 rounded-xl bg-neutral-50 p-4 ring-1 ring-neutral-200 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-3 bg-surface-secondary/50 border border-border rounded-3xl p-4 sm:grid-cols-2 lg:grid-cols-3">
                 {omdb.director && omdb.director !== 'N/A' && (
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Director</p>
-                    <p className="mt-0.5 text-sm text-neutral-800">{omdb.director}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">Director</p>
+                    <p className="mt-0.5 text-sm text-text">{omdb.director}</p>
                   </div>
                 )}
                 {omdb.writer && omdb.writer !== 'N/A' && (
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Writers</p>
-                    <p className="mt-0.5 text-sm text-neutral-800">{omdb.writer}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">Writers</p>
+                    <p className="mt-0.5 text-sm text-text">{omdb.writer}</p>
                   </div>
                 )}
                 {omdb.actors && omdb.actors !== 'N/A' && (
                   <div className="sm:col-span-2 lg:col-span-3">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Starring</p>
-                    <p className="mt-0.5 text-sm text-neutral-800">{omdb.actors}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">Starring</p>
+                    <p className="mt-0.5 text-sm text-text">{omdb.actors}</p>
                   </div>
                 )}
               </div>
             )}
 
             {/* User controls */}
-            <div className="space-y-4 rounded-xl bg-white p-5 shadow-sm ring-1 ring-neutral-200">
+            <div className="soft-card space-y-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">Status</label>
-                <div className="flex flex-wrap gap-2">
+                <label className="block text-sm font-medium text-text-secondary mb-1">Status</label>
+                <div className="segmented-control flex flex-wrap">
                   {statusOptions.map((opt) => (
                     <button
                       key={opt.value}
                       onClick={() => setStatus(opt.value)}
-                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                        currentStatus === opt.value
-                          ? 'bg-neutral-900 text-white'
-                          : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                      className={`segmented-control-item text-xs ${
+                        currentStatus === opt.value ? 'active' : ''
                       }`}
                     >
                       {opt.label}
@@ -258,7 +256,7 @@ export function MediaDetail() {
 
               {currentStatus === 'planning' && (
                 <div>
-                  <label htmlFor="plan-date" className="block text-sm font-medium text-neutral-700 mb-1">
+                  <label htmlFor="plan-date" className="block text-sm font-medium text-text-secondary mb-1">
                     Plan to Watch
                   </label>
                   <input
@@ -266,18 +264,18 @@ export function MediaDetail() {
                     type="date"
                     value={currentPlanToWatchDate}
                     onChange={(e) => setPlanToWatchDate(e.target.value)}
-                    className="block w-full rounded-lg border-0 py-2.5 px-3 text-neutral-900 shadow-sm ring-1 ring-inset ring-neutral-200 placeholder:text-neutral-400 focus:ring-2 focus:ring-inset focus:ring-neutral-900 sm:text-sm sm:leading-6"
+                    className="block w-full rounded-full bg-surface-secondary border-0 py-2.5 px-3 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30"
                   />
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">Rating</label>
+                <label className="block text-sm font-medium text-text-secondary mb-1">Rating</label>
                 <StarRating value={currentRating} onChange={(v) => setRating(v)} />
               </div>
 
               <div>
-                <label htmlFor="review" className="block text-sm font-medium text-neutral-700 mb-1">
+                <label htmlFor="review" className="block text-sm font-medium text-text-secondary mb-1">
                   Review
                 </label>
                 <textarea
@@ -285,7 +283,7 @@ export function MediaDetail() {
                   value={currentReview}
                   onChange={(e) => setReview(e.target.value)}
                   rows={4}
-                  className="block w-full rounded-lg border-0 py-2.5 px-3 text-neutral-900 shadow-sm ring-1 ring-inset ring-neutral-200 placeholder:text-neutral-400 focus:ring-2 focus:ring-inset focus:ring-neutral-900 sm:text-sm sm:leading-6 resize-none"
+                  className="block w-full rounded-2xl bg-surface-secondary border-0 py-3 px-4 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 resize-none"
                 />
               </div>
 

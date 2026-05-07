@@ -63,7 +63,7 @@ const DevSignInButton: React.FC<{ children: React.ReactNode; mode?: string }> = 
 
 const DevUserButton: React.FC<{ afterSignOutUrl?: string }> = () => (
   <div
-    className="h-8 w-8 rounded-full bg-neutral-300 flex items-center justify-center text-xs font-medium text-neutral-600"
+    className="h-8 w-8 rounded-full bg-border flex items-center justify-center text-xs font-medium text-text-secondary"
     title="Dev User"
   >
     D
@@ -71,7 +71,7 @@ const DevUserButton: React.FC<{ afterSignOutUrl?: string }> = () => (
 )
 
 const DevSignIn: React.FC = () => (
-  <div className="p-8 text-center text-neutral-600">Dev mode — you are already signed in</div>
+  <div className="p-8 text-center text-text-secondary">Dev mode — you are already signed in</div>
 )
 
 // ─── Exports ───

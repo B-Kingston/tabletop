@@ -10,11 +10,11 @@ interface WineCardProps {
 }
 
 const typeColors: Record<string, string> = {
-  red: 'bg-red-100 text-red-700',
-  white: 'bg-amber-50 text-amber-700',
-  rose: 'bg-pink-100 text-pink-700',
-  sparkling: 'bg-yellow-100 text-yellow-700',
-  port: 'bg-purple-100 text-purple-700',
+  red: 'bg-rose-50 text-rose-700',
+  white: 'bg-yellow-50 text-yellow-700',
+  rose: 'bg-rose-50 text-rose-600',
+  sparkling: 'bg-yellow-50 text-yellow-700',
+  port: 'bg-violet-50 text-violet-700',
 }
 
 export function WineCard({ wine, instanceId }: WineCardProps) {
@@ -30,14 +30,14 @@ export function WineCard({ wine, instanceId }: WineCardProps) {
           params: { instanceId, wineId: wine.id },
         })
       }
-      className="group text-left w-full rounded-xl bg-white p-5 shadow-sm ring-1 ring-neutral-200 hover:shadow-md transition-shadow"
+      className="group text-left w-full rounded-3xl bg-surface p-5 border border-border transition-all duration-150 hover:shadow-card hover:border-border-subtle"
     >
       <div className="flex items-start justify-between gap-2 mb-2">
-        <h3 className="font-medium text-neutral-900 truncate">{wine.name}</h3>
+        <h3 className="font-medium text-text truncate">{wine.name}</h3>
         <span
           className={cn(
             'inline-flex flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium capitalize',
-            typeColors[wine.type] || 'bg-neutral-100 text-neutral-600'
+            typeColors[wine.type] || 'bg-surface-secondary text-text-secondary'
           )}
         >
           {wine.type}
@@ -48,11 +48,11 @@ export function WineCard({ wine, instanceId }: WineCardProps) {
         {wine.rating !== null && wine.rating !== undefined ? (
           <StarRating value={wine.rating} readonly size="sm" />
         ) : (
-          <span className="text-xs text-neutral-400">Not rated</span>
+          <span className="text-xs text-muted">Not rated</span>
         )}
         <div className="text-right">
           {wine.cost !== null && wine.cost !== undefined && (
-            <p className="text-sm font-medium text-neutral-900">
+            <p className="text-sm font-medium text-text">
               ${wine.cost.toFixed(2)}
             </p>
           )}

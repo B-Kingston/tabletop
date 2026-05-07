@@ -37,7 +37,7 @@ export function RecipeDetail() {
       >
         <button
           onClick={() => navigate({ to: '/instances/$instanceId/recipes', params: { instanceId } })}
-          className="mb-6 flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+          className="mb-6 flex items-center gap-2 text-sm text-text-secondary hover:text-accent transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Recipes
@@ -47,9 +47,9 @@ export function RecipeDetail() {
           <div>
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-neutral-900">{recipe.title}</h1>
+                <h1 className="text-2xl font-bold tracking-tight text-text">{recipe.title}</h1>
                 {recipe.description && (
-                  <p className="mt-1 text-neutral-600">{recipe.description}</p>
+                  <p className="mt-1 text-text-secondary">{recipe.description}</p>
                 )}
               </div>
               <div className="flex gap-2">
@@ -82,57 +82,57 @@ export function RecipeDetail() {
             </div>
 
             {recipe.imageUrl && (
-              <div className="aspect-video w-full overflow-hidden rounded-xl bg-neutral-100 mb-6">
+              <div className="aspect-video w-full overflow-hidden rounded-3xl bg-surface-secondary mb-6">
                 <img src={recipe.imageUrl} alt={recipe.title} className="h-full w-full object-cover" />
               </div>
             )}
 
             {recipe.ingredients && recipe.ingredients.length > 0 && (
               <div className="mb-8">
-                <h2 className="text-lg font-semibold text-neutral-900 mb-3">Ingredients</h2>
+                <h2 className="text-lg font-semibold text-text mb-3">Ingredients</h2>
                 <IngredientList ingredients={recipe.ingredients} />
               </div>
             )}
 
             {recipe.steps && recipe.steps.length > 0 && (
               <div>
-                <h2 className="text-lg font-semibold text-neutral-900 mb-3">Instructions</h2>
+                <h2 className="text-lg font-semibold text-text mb-3">Instructions</h2>
                 <StepList steps={recipe.steps} />
               </div>
             )}
           </div>
 
           <aside className="space-y-6">
-            <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-neutral-200 space-y-4">
+            <div className="soft-card space-y-4">
               {(recipe.prepTime > 0 || recipe.cookTime > 0) && (
                 <div className="space-y-2 text-sm">
                   {recipe.prepTime > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-neutral-500">Prep time</span>
-                      <span className="font-medium text-neutral-900">{recipe.prepTime} min</span>
+                      <span className="text-muted">Prep time</span>
+                      <span className="font-medium text-text">{recipe.prepTime} min</span>
                     </div>
                   )}
                   {recipe.cookTime > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-neutral-500">Cook time</span>
-                      <span className="font-medium text-neutral-900">{recipe.cookTime} min</span>
+                      <span className="text-muted">Cook time</span>
+                      <span className="font-medium text-text">{recipe.cookTime} min</span>
                     </div>
                   )}
-                  <div className="flex justify-between border-t border-neutral-100 pt-2">
-                    <span className="text-neutral-500">Total</span>
-                    <span className="font-medium text-neutral-900">{recipe.prepTime + recipe.cookTime} min</span>
+                  <div className="flex justify-between border-t border-border pt-2">
+                    <span className="text-muted">Total</span>
+                    <span className="font-medium text-text">{recipe.prepTime + recipe.cookTime} min</span>
                   </div>
                 </div>
               )}
               {recipe.servings > 0 && (
                 <div className="text-sm">
-                  <span className="text-neutral-500">Servings</span>
-                  <span className="ml-2 font-medium text-neutral-900">{recipe.servings}</span>
+                  <span className="text-muted">Servings</span>
+                  <span className="ml-2 font-medium text-text">{recipe.servings}</span>
                 </div>
               )}
               {recipe.rating !== null && recipe.rating !== undefined && (
                 <div>
-                  <span className="text-sm text-neutral-500">Rating</span>
+                  <span className="text-sm text-muted">Rating</span>
                   <div className="mt-1">
                     <StarRating value={recipe.rating} readonly size="sm" />
                   </div>
@@ -145,7 +145,7 @@ export function RecipeDetail() {
                 {recipe.tags.map((tag) => (
                   <span
                     key={tag.id}
-                    className="inline-flex rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-600"
+                    className="inline-flex rounded-full bg-surface-secondary px-3 py-1 text-xs font-medium text-text-secondary"
                   >
                     {tag.name}
                   </span>
@@ -155,7 +155,7 @@ export function RecipeDetail() {
 
             <Button
               variant="ghost"
-              className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="w-full text-accent hover:text-accent/80 hover:bg-accent-surface"
               onClick={() => setDeleteOpen(true)}
             >
               <Trash2 className="mr-2 h-4 w-4" />

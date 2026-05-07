@@ -94,7 +94,7 @@ func TestCrossInstance_RecipeAccess(t *testing.T) {
 	instanceA, instanceB, userA, _ := seedTwoInstances(t, db)
 
 	recipeRepo := repositories.NewRecipeRepository(db)
-	recipeSvc := services.NewRecipeService(recipeRepo)
+	recipeSvc := services.NewRecipeService(recipeRepo, nil)
 	ctx := context.Background()
 
 	recipe, err := recipeSvc.Create(ctx, instanceA, userA, "Pasta", "Desc", "", 10, 20, 4, "", nil, nil, nil)
@@ -218,7 +218,7 @@ func TestCrossInstance_RecipeDeleteFromWrongInstance(t *testing.T) {
 	instanceA, instanceB, userA, _ := seedTwoInstances(t, db)
 
 	recipeRepo := repositories.NewRecipeRepository(db)
-	recipeSvc := services.NewRecipeService(recipeRepo)
+	recipeSvc := services.NewRecipeService(recipeRepo, nil)
 	ctx := context.Background()
 
 	recipe, err := recipeSvc.Create(ctx, instanceA, userA, "Secret Recipe", "", "", 0, 0, 0, "", nil, nil, nil)

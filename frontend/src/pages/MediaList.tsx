@@ -39,7 +39,7 @@ export function MediaList() {
         transition={{ duration: 0.2 }}
       >
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Media</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-text">The Shelf</h1>
           <Button size="sm" onClick={() => setSearchOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Add Media
@@ -47,30 +47,26 @@ export function MediaList() {
         </div>
 
         <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex gap-1 overflow-x-auto">
+          <div className="segmented-control overflow-x-auto">
             {statusTabs.map((tab) => (
               <button
                 key={tab.value}
                 onClick={() => setStatusFilter(tab.value)}
-                className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                  statusFilter === tab.value
-                    ? 'bg-neutral-900 text-white'
-                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                className={`segmented-control-item whitespace-nowrap text-xs ${
+                  statusFilter === tab.value ? 'active' : ''
                 }`}
               >
                 {tab.label}
               </button>
             ))}
           </div>
-          <div className="flex gap-1">
+          <div className="segmented-control">
             {typeTabs.map((tab) => (
               <button
                 key={tab.value}
                 onClick={() => setTypeFilter(tab.value)}
-                className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                  typeFilter === tab.value
-                    ? 'bg-neutral-900 text-white'
-                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                className={`segmented-control-item whitespace-nowrap text-xs ${
+                  typeFilter === tab.value ? 'active' : ''
                 }`}
               >
                 {tab.label}
@@ -80,7 +76,7 @@ export function MediaList() {
         </div>
 
         {error && (
-          <div className="rounded-lg bg-red-50 p-4 text-sm text-red-700 mb-4">
+          <div className="rounded-2xl bg-red-50/80 border border-red-100 p-4 text-sm text-red-700 mb-4">
             Failed to load media. Please try again.
           </div>
         )}
@@ -89,9 +85,14 @@ export function MediaList() {
 
         {media && media.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Search className="h-12 w-12 text-neutral-300 mb-4" />
-            <h3 className="text-lg font-medium text-neutral-900 mb-2">No media found</h3>
-            <p className="text-sm text-neutral-600">
+            <div className="relative mb-4">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="h-16 w-16 rounded-full bg-accent/10 blur-xl" />
+              </div>
+              <Search className="relative h-12 w-12 text-muted" />
+            </div>
+            <h3 className="text-xl font-semibold text-text mb-2">The shelf is empty</h3>
+            <p className="text-sm text-text-secondary">
               {statusFilter || typeFilter
                 ? 'Try adjusting your filters.'
                 : 'Add your first movie or TV show to get started.'}
@@ -100,7 +101,7 @@ export function MediaList() {
         )}
 
         {media && media.length > 0 && (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {media.map((item: MediaItem) => (
               <MediaCard key={item.id} media={item} instanceId={instanceId} />
             ))}

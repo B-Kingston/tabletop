@@ -18,33 +18,33 @@ export function RecipeSuggestionCard({
   ingredients,
 }: RecipeSuggestionCardProps) {
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm">
+    <div className="rounded-3xl border border-border bg-surface p-4">
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-          <ChefHat className="h-5 w-5" />
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-accent-surface text-accent">
+          <ChefHat className="h-5 w-5" strokeWidth={1.5} />
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-neutral-900">{title}</h4>
+          <h4 className="font-medium text-text">{title}</h4>
           {description && (
-            <p className="mt-1 text-sm text-neutral-500 line-clamp-2">{description}</p>
+            <p className="mt-1 text-sm text-text-secondary line-clamp-2">{description}</p>
           )}
 
-          <div className="mt-2 flex items-center gap-4 text-xs text-neutral-400">
+          <div className="mt-2 flex items-center gap-4 text-xs text-muted">
             {(prepTime ?? 0) > 0 && (
               <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
+                <Clock className="h-3 w-3" strokeWidth={1.5} />
                 {prepTime} min prep
               </span>
             )}
             {(cookTime ?? 0) > 0 && (
               <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
+                <Clock className="h-3 w-3" strokeWidth={1.5} />
                 {cookTime} min cook
               </span>
             )}
             {(servings ?? 0) > 0 && (
               <span className="flex items-center gap-1">
-                <Users className="h-3 w-3" />
+                <Users className="h-3 w-3" strokeWidth={1.5} />
                 {servings} servings
               </span>
             )}
@@ -55,13 +55,13 @@ export function RecipeSuggestionCard({
               {ingredients.slice(0, 5).map((ing, i) => (
                 <span
                   key={i}
-                  className="inline-flex rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600"
+                  className="inline-flex rounded-full bg-surface-secondary px-2 py-0.5 text-xs text-text-secondary"
                 >
                   {ing}
                 </span>
               ))}
               {ingredients.length > 5 && (
-                <span className="text-xs text-neutral-400">+{ingredients.length - 5} more</span>
+                <span className="text-xs text-muted">+{ingredients.length - 5} more</span>
               )}
             </div>
           )}

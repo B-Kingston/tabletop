@@ -12,14 +12,14 @@ const navItems = [
   { path: '/wines' as const, label: 'Wines', icon: Wine },
   { path: '/nights' as const, label: 'Nights', icon: Moon },
   { path: '/chat' as const, label: 'Messages', icon: MessageSquare },
-  { path: '/ai' as const, label: 'AI Assistant', icon: Bot },
+  { path: '/ai' as const, label: 'Assistant', icon: Bot },
 ]
 
 export function InstanceNav({ instanceId }: InstanceNavProps) {
   const matchRoute = useMatchRoute()
 
   return (
-    <nav className="flex items-center gap-1 overflow-x-auto py-1" aria-label="Instance navigation">
+    <nav className="flex items-center gap-1" aria-label="Instance navigation">
       {navItems.map((item) => {
         const isActive = matchRoute({
           to: '/instances/$instanceId' + item.path,
@@ -33,15 +33,15 @@ export function InstanceNav({ instanceId }: InstanceNavProps) {
             to={'/instances/$instanceId' + item.path as '/instances/$instanceId/media'}
             params={{ instanceId }}
             className={cn(
-              'flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors',
+              'relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-all duration-150',
               isActive
-                ? 'bg-neutral-900 text-white'
-                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                ? 'text-accent bg-accent-surface'
+                : 'text-muted hover:text-text hover:bg-surface-secondary/50'
             )}
             aria-current={isActive ? 'page' : undefined}
           >
-            <item.icon className="h-4 w-4 flex-shrink-0" />
-            {item.label}
+            <item.icon className="h-4 w-4 flex-shrink-0" strokeWidth={1.5} />
+            <span className="hidden md:inline">{item.label}</span>
           </Link>
         )
       })}

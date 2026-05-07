@@ -38,7 +38,7 @@ export function Dialog({ open, onClose, children, className }: DialogProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="fixed inset-0 bg-black/50"
+            className="fixed inset-0 bg-text/40"
             onClick={onClose}
             aria-hidden="true"
           />
@@ -48,7 +48,7 @@ export function Dialog({ open, onClose, children, className }: DialogProps) {
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.15 }}
             className={cn(
-              'relative z-50 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl',
+              'relative z-50 w-full max-w-lg rounded-3xl bg-surface p-6 shadow-card',
               className
             )}
             role="dialog"
@@ -56,7 +56,7 @@ export function Dialog({ open, onClose, children, className }: DialogProps) {
           >
             <button
               onClick={onClose}
-              className="absolute right-4 top-4 rounded-sm p-1 text-neutral-400 hover:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:ring-offset-2"
+              className="absolute right-4 top-4 rounded-full p-1 text-muted hover:text-text-secondary focus:outline-none focus:ring-2 focus:ring-accent/30 focus:ring-offset-2"
               aria-label="Close"
             >
               <X className="h-4 w-4" />
@@ -82,7 +82,7 @@ interface DialogTitleProps {
 }
 
 export function DialogTitle({ children }: DialogTitleProps) {
-  return <h2 className="text-lg font-semibold text-neutral-900">{children}</h2>
+  return <h2 className="text-lg font-semibold text-text">{children}</h2>
 }
 
 interface DialogBodyProps {

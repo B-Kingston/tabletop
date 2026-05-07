@@ -31,7 +31,7 @@ export function RecipeList() {
         transition={{ duration: 0.2 }}
       >
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Recipes</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-text">Recipes</h1>
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" onClick={() => setGeneratorOpen(true)}>
               <Sparkles className="mr-2 h-4 w-4" />
@@ -54,20 +54,20 @@ export function RecipeList() {
 
         <div className="flex flex-col gap-4 mb-6 sm:flex-row">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search recipes..."
-              className="block w-full rounded-lg border-0 py-2.5 pl-10 pr-3 text-neutral-900 shadow-sm ring-1 ring-inset ring-neutral-200 placeholder:text-neutral-400 focus:ring-2 focus:ring-inset focus:ring-neutral-900 sm:text-sm"
+              className="block w-full rounded-full bg-surface-secondary border-0 py-2.5 pl-10 pr-4 text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm"
             />
           </div>
           {allTags.length > 0 && (
             <select
               value={tagFilter}
               onChange={(e) => setTagFilter(e.target.value)}
-              className="rounded-lg border-0 py-2.5 px-3 text-sm text-neutral-900 shadow-sm ring-1 ring-inset ring-neutral-200 focus:ring-2 focus:ring-inset focus:ring-neutral-900"
+              className="rounded-full bg-surface-secondary border-0 py-2.5 px-4 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent/30"
             >
               <option value="">All Tags</option>
               {allTags.map((tag) => (
@@ -80,7 +80,7 @@ export function RecipeList() {
         </div>
 
         {error && (
-          <div className="rounded-lg bg-red-50 p-4 text-sm text-red-700 mb-4">
+          <div className="rounded-2xl bg-accent-surface border border-accent/20 p-4 text-sm text-accent mb-4">
             Failed to load recipes. Please try again.
           </div>
         )}
@@ -89,16 +89,16 @@ export function RecipeList() {
 
         {filtered && filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Search className="h-12 w-12 text-neutral-300 mb-4" />
-            <h3 className="text-lg font-medium text-neutral-900 mb-2">No recipes found</h3>
-            <p className="text-sm text-neutral-600">
+            <Search className="h-12 w-12 text-muted mb-4" />
+            <h3 className="text-lg font-medium text-text mb-2">The kitchen is quiet</h3>
+            <p className="text-sm text-text-secondary">
               {search || tagFilter ? 'Try adjusting your filters.' : 'Create your first recipe to get started.'}
             </p>
           </div>
         )}
 
         {filtered && filtered.length > 0 && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((recipe) => (
               <RecipeCard key={recipe.id} recipe={recipe} instanceId={instanceId} />
             ))}

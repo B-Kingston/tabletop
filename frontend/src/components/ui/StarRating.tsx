@@ -48,7 +48,7 @@ export function StarRating({ value, onChange, max = 5, readonly = false, size = 
             key={i}
             type="button"
             className={cn(
-              'relative focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:ring-offset-1 rounded-sm',
+              'relative focus:outline-none focus:ring-2 focus:ring-accent/30 focus:ring-offset-1 rounded-sm',
               readonly && 'cursor-default'
             )}
             onClick={() => handleClick(starIndex)}
@@ -60,14 +60,14 @@ export function StarRating({ value, onChange, max = 5, readonly = false, size = 
             <Star
               className={cn(
                 sizeClasses[size],
-                'text-neutral-200 transition-colors'
+                'text-border transition-colors'
               )}
             />
             {(filled || halfFilled) && (
               <Star
                 className={cn(
                   sizeClasses[size],
-                  'absolute inset-0 fill-amber-400 text-amber-400 transition-colors'
+                  'absolute inset-0 fill-accent text-accent transition-colors'
                 )}
                 style={halfFilled ? { clipPath: 'inset(0 50% 0 0)' } : undefined}
               />
@@ -76,7 +76,7 @@ export function StarRating({ value, onChange, max = 5, readonly = false, size = 
         )
       })}
       {value > 0 && (
-        <span className="ml-1 text-sm text-neutral-500">{value.toFixed(1)}</span>
+        <span className="ml-1 text-sm text-muted">{value.toFixed(1)}</span>
       )}
     </div>
   )

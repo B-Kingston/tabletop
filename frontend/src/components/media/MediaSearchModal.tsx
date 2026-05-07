@@ -69,7 +69,7 @@ export function MediaSearchModal({ open, onClose, instanceId }: MediaSearchModal
       </DialogHeader>
       <DialogBody>
         <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
           <Input
             value={query}
             onChange={(e) => handleInputChange(e.target.value)}
@@ -81,12 +81,12 @@ export function MediaSearchModal({ open, onClose, instanceId }: MediaSearchModal
 
         {searching && (
           <div className="flex justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
+            <Loader2 className="h-6 w-6 animate-spin text-muted" />
           </div>
         )}
 
         {!searching && results.length === 0 && query && (
-          <p className="text-center text-sm text-neutral-500 py-8">No results found.</p>
+          <p className="text-center text-sm text-muted py-8">Nothing found on the shelf</p>
         )}
 
         <div className="max-h-96 space-y-2 overflow-y-auto">
@@ -96,19 +96,19 @@ export function MediaSearchModal({ open, onClose, instanceId }: MediaSearchModal
             return (
               <div
                 key={result.omdbId}
-                className="flex items-center gap-3 rounded-lg p-3 hover:bg-neutral-50 transition-colors"
+                className="flex items-center gap-3 rounded-2xl p-3 hover:bg-surface-secondary/50 transition-colors"
               >
-                <div className="h-16 w-11 flex-shrink-0 overflow-hidden rounded bg-neutral-100">
-                  <div className="flex h-full items-center justify-center text-neutral-300">
+                <div className="h-16 w-11 flex-shrink-0 overflow-hidden rounded bg-surface-secondary">
+                  <div className="flex h-full items-center justify-center text-muted">
                     <Film className="h-4 w-4" />
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-neutral-900 truncate">
+                  <p className="text-sm font-medium text-text truncate">
                     {result.title}
-                    {result.releaseYear && <span className="text-neutral-400 ml-1">({result.releaseYear})</span>}
+                    {result.releaseYear && <span className="text-muted ml-1">({result.releaseYear})</span>}
                   </p>
-                  <p className="text-xs text-neutral-500 capitalize">{result.type}</p>
+                  <p className="text-xs text-text-secondary capitalize">{result.type}</p>
                 </div>
                 <Button
                   size="sm"

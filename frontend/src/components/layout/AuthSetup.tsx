@@ -13,8 +13,8 @@ export function AuthSetup({ children }: { children: React.ReactNode }) {
 
   if (!auth.isLoaded) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-neutral-50">
-        <div className="h-10 w-10 animate-pulse rounded-full bg-neutral-200" />
+      <div className="flex min-h-screen items-center justify-center bg-bg">
+        <div className="h-10 w-10 animate-pulse rounded-full bg-border" />
       </div>
     )
   }

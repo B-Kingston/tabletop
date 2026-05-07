@@ -98,27 +98,27 @@ export function NightEdit() {
           onClick={() =>
             navigate({ to: '/instances/$instanceId/nights', params: { instanceId } })
           }
-          className="mb-6 flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+          className="mb-6 flex items-center gap-2 text-sm text-text-secondary hover:text-accent transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Nights
         </button>
 
-        <h1 className="text-2xl font-bold tracking-tight text-neutral-900 mb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-text mb-6">
           {isEdit ? 'Edit Night' : 'New Night'}
         </h1>
 
         {isLoading ? (
           <div className="space-y-4 max-w-lg animate-pulse">
-            <div className="h-10 bg-neutral-200 rounded-lg" />
-            <div className="h-10 bg-neutral-200 rounded-lg" />
-            <div className="h-10 bg-neutral-200 rounded-lg" />
-            <div className="h-10 bg-neutral-200 rounded-lg" />
+            <div className="h-10 bg-border rounded-2xl" />
+            <div className="h-10 bg-border rounded-2xl" />
+            <div className="h-10 bg-border rounded-2xl" />
+            <div className="h-10 bg-border rounded-2xl" />
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 max-w-lg">
             <div>
-              <label htmlFor="night-name" className="block text-sm font-medium text-neutral-700 mb-1">
+              <label htmlFor="night-name" className="block text-sm font-medium text-text-secondary mb-1">
                 Name
               </label>
               <Input
@@ -130,14 +130,14 @@ export function NightEdit() {
             </div>
 
             <div>
-              <label htmlFor="night-wine" className="block text-sm font-medium text-neutral-700 mb-1">
+              <label htmlFor="night-wine" className="block text-sm font-medium text-text-secondary mb-1">
                 Wine
               </label>
               <select
                 id="night-wine"
                 value={wineId}
                 onChange={(e) => setWineId(e.target.value)}
-                className="block w-full rounded-lg border-0 py-2.5 px-3 text-neutral-900 shadow-sm ring-1 ring-inset ring-neutral-200 focus:ring-2 focus:ring-inset focus:ring-neutral-900 sm:text-sm"
+                className="block w-full rounded-full bg-surface-secondary border-0 py-2.5 px-5 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 transition-all duration-150"
               >
                 <option value="">— None —</option>
                 {wines?.map((wine) => (
@@ -149,14 +149,14 @@ export function NightEdit() {
             </div>
 
             <div>
-              <label htmlFor="night-recipe" className="block text-sm font-medium text-neutral-700 mb-1">
+              <label htmlFor="night-recipe" className="block text-sm font-medium text-text-secondary mb-1">
                 Recipe
               </label>
               <select
                 id="night-recipe"
                 value={recipeId}
                 onChange={(e) => setRecipeId(e.target.value)}
-                className="block w-full rounded-lg border-0 py-2.5 px-3 text-neutral-900 shadow-sm ring-1 ring-inset ring-neutral-200 focus:ring-2 focus:ring-inset focus:ring-neutral-900 sm:text-sm"
+                className="block w-full rounded-full bg-surface-secondary border-0 py-2.5 px-5 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 transition-all duration-150"
               >
                 <option value="">— None —</option>
                 {recipes?.map((recipe) => (
@@ -168,14 +168,14 @@ export function NightEdit() {
             </div>
 
             <div>
-              <label htmlFor="night-media" className="block text-sm font-medium text-neutral-700 mb-1">
+              <label htmlFor="night-media" className="block text-sm font-medium text-text-secondary mb-1">
                 Media
               </label>
               <select
                 id="night-media"
                 value={mediaId}
                 onChange={(e) => setMediaId(e.target.value)}
-                className="block w-full rounded-lg border-0 py-2.5 px-3 text-neutral-900 shadow-sm ring-1 ring-inset ring-neutral-200 focus:ring-2 focus:ring-inset focus:ring-neutral-900 sm:text-sm"
+                className="block w-full rounded-full bg-surface-secondary border-0 py-2.5 px-5 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 transition-all duration-150"
               >
                 <option value="">— None —</option>
                 {mediaItems?.map((item) => (

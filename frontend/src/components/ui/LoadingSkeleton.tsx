@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('animate-pulse rounded-md bg-neutral-200', className)}
+      className={cn('animate-pulse rounded-2xl bg-border', className)}
       {...props}
     />
   )
@@ -11,8 +11,8 @@ function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>)
 
 export function CardSkeleton() {
   return (
-    <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-neutral-200">
-      <Skeleton className="mb-4 h-40 w-full rounded-lg" />
+    <div className="soft-card">
+      <Skeleton className="mb-4 h-40 w-full rounded-2xl" />
       <Skeleton className="mb-2 h-4 w-3/4" />
       <Skeleton className="mb-4 h-3 w-1/2" />
       <div className="flex gap-2">
@@ -27,7 +27,7 @@ export function ListSkeleton({ count = 5 }: { count?: number }) {
   return (
     <div className="space-y-3">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="flex items-center gap-4 rounded-lg bg-white p-4 ring-1 ring-neutral-200">
+        <div key={i} className="soft-card flex items-center gap-4 p-4">
           <Skeleton className="h-10 w-10 rounded-full" />
           <div className="flex-1">
             <Skeleton className="mb-2 h-4 w-1/3" />
@@ -44,7 +44,7 @@ export function DetailSkeleton() {
     <div className="space-y-6">
       <Skeleton className="h-8 w-1/3" />
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <Skeleton className="aspect-[2/3] w-full rounded-xl" />
+        <Skeleton className="aspect-[2/3] w-full rounded-3xl" />
         <div className="md:col-span-2 space-y-4">
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-5/6" />

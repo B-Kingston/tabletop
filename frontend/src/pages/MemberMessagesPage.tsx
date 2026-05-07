@@ -79,13 +79,13 @@ export function MemberMessagesPage() {
         transition={{ duration: 0.2 }}
         className="flex h-[calc(100vh-8rem)] flex-col"
       >
-        <div className="mb-4 flex items-center gap-3 border-b border-neutral-200 pb-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-900 text-white">
-            <MessageSquare className="h-5 w-5" />
+        <div className="mb-4 flex items-center gap-3 border-b border-border pb-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-surface text-accent">
+            <MessageSquare className="h-5 w-5" strokeWidth={1.5} />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-neutral-900">Messages</h1>
-            <p className="text-sm text-neutral-500">Shared chat for everyone in this instance.</p>
+            <h1 className="text-xl font-semibold text-text">Messages</h1>
+            <p className="text-sm text-text-secondary">Shared chat for everyone in this instance.</p>
           </div>
         </div>
 
@@ -97,22 +97,22 @@ export function MemberMessagesPage() {
             </div>
           )}
           {!isLoading && !error && orderedMessages.length === 0 && (
-            <div className="flex h-full items-center justify-center text-sm text-neutral-400">
-              No messages yet.
+            <div className="flex h-full items-center justify-center text-sm text-muted">
+              The conversation hasn't started
             </div>
           )}
           <div className="space-y-4">
             {orderedMessages.map((message) => (
-              <article key={message.id} className="max-w-3xl rounded-lg bg-white px-4 py-3 ring-1 ring-neutral-200">
+              <article key={message.id} className="max-w-3xl soft-card p-4">
                 <div className="mb-1 flex items-center gap-2">
-                  <span className="text-sm font-medium text-neutral-900">
+                  <span className="text-sm font-medium text-text">
                     {message.user?.name || message.user?.email || 'Member'}
                   </span>
-                  <time className="text-xs text-neutral-400" dateTime={message.createdAt}>
+                  <time className="text-xs text-muted" dateTime={message.createdAt}>
                     {new Date(message.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
                   </time>
                 </div>
-                <p className="whitespace-pre-wrap text-sm text-neutral-700">{message.content}</p>
+                <p className="whitespace-pre-wrap text-sm text-text-secondary">{message.content}</p>
               </article>
             ))}
           </div>
